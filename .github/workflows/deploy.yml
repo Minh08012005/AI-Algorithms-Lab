@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+# Ensure the workflow has permission to write repository contents
+permissions:
+  contents: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -12,6 +16,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # persist credentials so deployment step can push
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
