@@ -12,200 +12,8 @@ import {
 // Nhập Data và Component
 import { graphsData } from "../data/graphsData";
 import Node from "../components/Node";
-
-// ==========================================
-// ⚙️ ENGINE: LOGIC TỰ ĐỘNG GIẢI BÀI TOÁN
-// ==========================================
-const getAlgorithmTrace = (graph, algo) => {
-  // Depth-limited search (DLS) will annotate nodes with their depth: A(0), B(1), ...
-  const isDLS = algo === "DLS";
-  const depthLimit = isDLS ? graph.depthLimit || 3 : null;
-
-  let trace = [];
-  const parent = {};
-
-  if (isDLS) {
-    // Q and L store objects {node, d}
-    const Q = [{ node: graph.start, d: 0 }];
-    let L = [{ node: graph.start, d: 0 }];
-    trace.push({ expand: "", adj: "", q: formatList(Q), l: formatList(L) });
-
-    let success = false;
-    const discovered = new Set([graph.start]);
-
-    while (L.length > 0 && !success) {
-      const uObj = L.pop();
-      const u = uObj.node;
-      const du = uObj.d;
-
-      // adjacency sorted
-      const adjNames = [...(graph.edges[u] || [])].sort((a, b) =>
-        a.localeCompare(b, undefined, { sensitivity: "base" }),
-      );
-
-      const adjList = [];
-      const newNodes = [];
-      for (const v of adjNames) {
-        const vd = du + 1;
-        if (vd > depthLimit) continue;
-        adjList.push({ node: v, d: vd });
-        if (!discovered.has(v)) {
-          discovered.add(v);
-          Q.push({ node: v, d: vd });
-          newNodes.push({ node: v, d: vd });
-          if (!parent[v]) parent[v] = u;
-        }
-      }
-
-      // Append new nodes to L (DFS-like LIFO: push to end; since we pop from end, last added is next)
-      L = [...L, ...newNodes];
-
-      const isGoal = u === graph.goal;
-      trace.push({
-        expand: `${u}(${du})`,
-        adj: adjList.map((a) => `${a.node}(${a.d})`).join(","),
-        q: formatList(Q),
-        l: formatList(L),
-        isGoal,
-      });
-
-      if (isGoal) success = true;
-    }
-
-    let finalPath = [];
-    if (success) {
-      let cur = graph.goal;
-      finalPath.push(cur);
-      while (cur !== graph.start && parent[cur]) {
-        cur = parent[cur];
-        finalPath.push(cur);
-      }
-      finalPath = finalPath.reverse();
-    }
-
-    return { trace, finalPath };
-  }
-
-  // Standard DFS/BFS behavior (existing)
-  const Q = [graph.start];
-  let L = [graph.start];
-  trace.push({ expand: "", adj: "", q: Q.join(","), l: L.join(",") });
-
-  let success = false;
-  while (L.length > 0 && !success) {
-    // For DFS use stack semantics (pop from end). For BFS use queue (shift from front).
-    let u = algo === "DFS" ? L.pop() : L.shift();
-    // Ensure adjacency is consistently ordered alphabetically (case-insensitive)
-    let adjList = [...(graph.edges[u] || [])].sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: "base" }),
-    );
-    let newNodes = [];
-
-    for (let v of adjList) {
-      if (!Q.includes(v)) {
-        Q.push(v);
-        newNodes.push(v);
-        if (!parent[v]) parent[v] = u;
-      }
-    }
-
-    // Append new nodes to L. For DFS the last element is the stack top.
-    L = [...L, ...newNodes];
-
-    let isGoal = u === graph.goal;
-    trace.push({
-      expand: u,
-      adj: adjList.join(","),
-      q: [...Q].join(","),
-      l: [...L].join(","),
-      isGoal,
-    });
-
-    if (isGoal) success = true;
-  }
-
-  // Reconstruct final path if goal reached
-  let finalPath = [];
-  if (success) {
-    let cur = graph.goal;
-    finalPath.push(cur);
-    while (cur !== graph.start && parent[cur]) {
-      cur = parent[cur];
-      finalPath.push(cur);
-    }
-    finalPath = finalPath.reverse();
-  }
-
-  return { trace, finalPath };
-};
-
-// helper to format list of {node,d} objects
-const formatList = (arr) =>
-  (arr || []).map((x) => `${x.node}(${x.d})`).join(",");
-
-const STORAGE_KEY = "ai-lab-search-practice-v1";
-
-const normPersist = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
-
-/** Khôi phục chỉ khi còn khớp trace hiện tại (tránh bản cũ sau khi đổi đề/code). */
-function validatePersistedSession(s, trace) {
-  if (!s || s.v !== 1 || !Array.isArray(trace) || trace.length < 1) return false;
-  if (!["DFS", "BFS", "DLS"].includes(s.algo)) return false;
-  if (
-    typeof s.graphIdx !== "number" ||
-    s.graphIdx < 0 ||
-    s.graphIdx >= graphsData.length
-  )
-    return false;
-  if (!Array.isArray(s.history) || s.history.length === 0) return false;
-
-  const completed = !!s.completed;
-  const step = s.step;
-  if (typeof step !== "number" || step < 1) return false;
-
-  if (completed) {
-    if (!trace[step]?.isGoal) return false;
-    if (s.history.length !== step + 1) return false;
-  } else {
-    if (s.history.length !== step) return false;
-    if (step >= trace.length) return false;
-  }
-
-  for (let i = 0; i < s.history.length; i++) {
-    const tr = trace[i];
-    const hi = s.history[i];
-    if (!tr || !hi) return false;
-    if (normPersist(hi.expand) !== normPersist(tr.expand)) return false;
-    if (normPersist(hi.q) !== normPersist(tr.q)) return false;
-    if (normPersist(hi.l) !== normPersist(tr.l)) return false;
-    const goalRow = !!tr.isGoal;
-    const adjHi = normPersist(hi.adj);
-    const adjTr = normPersist(tr.adj);
-    if (goalRow && i === s.history.length - 1) {
-      const okTtkt = adjHi === normPersist("TTKT/DỪNG");
-      if (!okTtkt && adjHi !== adjTr) return false;
-    } else {
-      if (adjHi !== adjTr) return false;
-    }
-  }
-  return true;
-}
-
-function loadInitialPracticeState() {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    const g = graphsData[s.graphIdx];
-    if (!g) return null;
-    const { trace } = getAlgorithmTrace(g, s.algo);
-    if (!validatePersistedSession(s, trace)) return null;
-    return s;
-  } catch {
-    return null;
-  }
-}
+import { getAlgorithmTrace } from "./searchEngine";
+import { loadInitialPracticeState } from "./sessionStorage";
 
 const initialPracticeSession = loadInitialPracticeState();
 
@@ -218,7 +26,9 @@ export default function SearchModule() {
     () => initialPracticeSession?.graphIdx ?? 0,
   );
   const [step, setStep] = useState(() => initialPracticeSession?.step ?? 1);
-  const [score, setScore] = useState(() => initialPracticeSession?.score ?? 100);
+  const [score, setScore] = useState(
+    () => initialPracticeSession?.score ?? 100,
+  );
   const [history, setHistory] = useState(
     () => initialPracticeSession?.history ?? [],
   );
@@ -487,9 +297,7 @@ export default function SearchModule() {
         type: "error",
         text:
           "Sai rồi! Hãy kiểm tra lại nguyên tắc của " +
-          (algo === "DFS" || algo === "DLS"
-            ? "Stack"
-            : "Queue (hàng đợi)"),
+          (algo === "DFS" || algo === "DLS" ? "Stack" : "Queue (hàng đợi)"),
       });
     }
   };
@@ -796,11 +604,7 @@ export default function SearchModule() {
                           {r.expand || "—"}
                         </td>
                         <td className="p-4 text-slate-600 border-r border-amber-100/60 font-mono text-xs">
-                          {r.isGoal
-                            ? "TTKT/DỪNG"
-                            : r.adj
-                              ? r.adj
-                              : "—"}
+                          {r.isGoal ? "TTKT/DỪNG" : r.adj ? r.adj : "—"}
                         </td>
                         <td className="p-4 text-slate-700 font-mono tracking-tighter border-r border-amber-100/60 text-xs">
                           {r.q}
