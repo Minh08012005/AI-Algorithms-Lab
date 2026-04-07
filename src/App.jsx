@@ -1,25 +1,23 @@
 import React, { useState } from "react";
 import Sidebar from "./components/Sidebar";
-import SearchModule from "./modules/SearchModule";
+import DFSModule from "./modules/DFSModule";
+import BFSModule from "./modules/BFSModule";
+import BestFirstSearchModule from "./modules/BestFirstSearchModule";
+import HillClimbingModule from "./modules/HillClimbingModule";
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState("home");
 
   const renderContent = () => {
     switch (currentTab) {
-      case "search":
-        return <SearchModule />;
-      case "astar":
-        return (
-          <div className="p-10 bg-white rounded-3xl border shadow-sm text-center">
-            <h2 className="text-2xl font-black text-slate-800 mb-2">
-              A* Search Coming Soon
-            </h2>
-            <p className="text-slate-500 italic">
-              Module này sẽ sớm được cập nhật vào workspace!
-            </p>
-          </div>
-        );
+      case "dfs":
+        return <DFSModule />;
+      case "bfs":
+        return <BFSModule />;
+      case "best-first":
+        return <BestFirstSearchModule />;
+      case "hill-climbing":
+        return <HillClimbingModule />;
       default:
         return (
           <div className="max-w-4xl mx-auto py-16 text-center animate-in zoom-in-95 duration-700">
@@ -30,7 +28,7 @@ export default function App() {
               Hệ thống thực hành thuật toán Trí tuệ nhân tạo.
             </p>
             <button
-              onClick={() => setCurrentTab("search")}
+              onClick={() => setCurrentTab("dfs")}
               className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-xl hover:bg-indigo-700 transition-all active:scale-95"
             >
               Bắt đầu thực hành

@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Home,
-  Layers,
-  Zap,
-  Play,
-  Share2,
-  Target,
-  BrainCircuit,
-} from "lucide-react";
+import { Layers, Play, Share2, Target, BrainCircuit } from "lucide-react";
 
 const Sidebar = ({ currentTab, setTab }) => {
   return (
@@ -27,16 +19,28 @@ const Sidebar = ({ currentTab, setTab }) => {
           Tìm kiếm
         </p>
         <button
-          onClick={() => setTab("search")}
-          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "search" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "text-slate-500 hover:bg-slate-50"}`}
+          onClick={() => setTab("dfs")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "dfs" ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "text-slate-500 hover:bg-slate-50"}`}
         >
-          <Layers size={18} /> DFS & BFS
+          <Layers size={18} /> DFS
         </button>
         <button
-          onClick={() => setTab("astar")}
-          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "astar" ? "bg-orange-600 text-white shadow-lg shadow-orange-200" : "text-slate-500 hover:bg-slate-50"}`}
+          onClick={() => setTab("bfs")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "bfs" ? "bg-sky-600 text-white shadow-lg shadow-sky-200" : "text-slate-500 hover:bg-slate-50"}`}
         >
-          <Target size={18} /> Tìm kiếm A*
+          <Layers size={18} /> BFS
+        </button>
+        <button
+          onClick={() => setTab("best-first")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "best-first" ? "bg-orange-600 text-white shadow-lg shadow-orange-200" : "text-slate-500 hover:bg-slate-50"}`}
+        >
+          <Target size={18} /> Best First Search
+        </button>
+        <button
+          onClick={() => setTab("hill-climbing")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "hill-climbing" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "text-slate-500 hover:bg-slate-50"}`}
+        >
+          <BrainCircuit size={18} /> Leo đồi
         </button>
       </div>
 

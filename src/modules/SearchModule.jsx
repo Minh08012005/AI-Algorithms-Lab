@@ -13,15 +13,21 @@ import {
 import { graphsData } from "../data/graphsData";
 import Node from "../components/Node";
 import { getAlgorithmTrace } from "./searchEngine";
-import { loadInitialPracticeState } from "./sessionStorage";
-
-const initialPracticeSession = loadInitialPracticeState();
+import { loadInitialPracticeState, STORAGE_KEY } from "./sessionStorage";
 
 // ==========================================
 // 🖥️ COMPONENT CHÍNH CỦA MODULE
 // ==========================================
-export default function SearchModule() {
-  const [algo, setAlgo] = useState(() => initialPracticeSession?.algo ?? "DFS");
+export default function SearchModule({
+  initialAlgo = "DFS",
+  showAlgoSelector = true,
+  title = "Thực hành Thuật toán Tìm kiếm",
+}) {
+  const initialPracticeSession = useMemo(() => loadInitialPracticeState(), []);
+  const [algo, setAlgo] = useState(() => {
+    if (!showAlgoSelector) return initialAlgo;
+    return initialPracticeSession?.algo ?? initialAlgo;
+  });
   const [graphIdx, setGraphIdx] = useState(
     () => initialPracticeSession?.graphIdx ?? 0,
   );
@@ -344,7 +350,7 @@ export default function SearchModule() {
           )}
           <div>
             <h2 className="text-xl font-black text-slate-800 uppercase leading-none mb-1">
-              Thực hành Thuật toán Tìm kiếm
+              {title}
             </h2>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
               {algo} Algorithm Mode
@@ -352,29 +358,31 @@ export default function SearchModule() {
           </div>
         </div>
 
-        <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-          <button
-            onClick={() => handleAlgoChange("DFS")}
-            disabled={validationErrors.length > 0}
-            className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "DFS" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            DFS
-          </button>
-          <button
-            onClick={() => handleAlgoChange("BFS")}
-            disabled={validationErrors.length > 0}
-            className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "BFS" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            BFS
-          </button>
-          <button
-            onClick={() => handleAlgoChange("DLS")}
-            disabled={validationErrors.length > 0}
-            className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "DLS" ? "bg-white text-purple-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            DLS
-          </button>
-        </div>
+        {showAlgoSelector && (
+          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+            <button
+              onClick={() => handleAlgoChange("DFS")}
+              disabled={validationErrors.length > 0}
+              className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "DFS" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              DFS
+            </button>
+            <button
+              onClick={() => handleAlgoChange("BFS")}
+              disabled={validationErrors.length > 0}
+              className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "BFS" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              BFS
+            </button>
+            <button
+              onClick={() => handleAlgoChange("DLS")}
+              disabled={validationErrors.length > 0}
+              className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "DLS" ? "bg-white text-purple-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              DLS
+            </button>
+          </div>
+        )}
 
         <select
           value={graphIdx}
@@ -387,40 +395,6 @@ export default function SearchModule() {
             </option>
           ))}
         </select>
-
-        <div
-          className="flex w-full sm:w-auto rounded-2xl border border-slate-200 bg-slate-100 p-1 gap-0.5"
-          role="group"
-          aria-label="Chế độ hiển thị"
-        >
-          <button
-            type="button"
-            onClick={() => {
-              setShowSolution(false);
-              setFeedback(null);
-            }}
-            disabled={validationErrors.length > 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all ${!showSolution ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            <PencilLine size={16} />
-            Luyện tập
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowSolution(true);
-              setFeedback({
-                type: "success",
-                text: "Đang xem đáp án mẫu — tắt để tự làm lại.",
-              });
-            }}
-            disabled={validationErrors.length > 0 || trace.length === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all ${showSolution ? "bg-amber-100 text-amber-900 shadow-sm ring-1 ring-amber-200" : "text-slate-500 hover:text-amber-800"} ${validationErrors.length > 0 || trace.length === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            <BookOpen size={16} />
-            Đáp án mẫu
-          </button>
-        </div>
 
         {canRestartSameProblem && (
           <button
@@ -752,27 +726,56 @@ export default function SearchModule() {
                 </button>
               )}
             </div>
-            {!showSolution && !completed && (
+            <div className="flex flex-wrap gap-2 items-center">
               <button
                 type="button"
-                onClick={handleCheck}
+                onClick={() => {
+                  setShowSolution(false);
+                  setFeedback(null);
+                }}
                 disabled={validationErrors.length > 0}
-                className={`px-8 py-3 rounded-2xl text-white font-black shadow-lg transition-transform active:scale-95 ${algo === "DFS" ? "bg-indigo-600 shadow-indigo-200" : algo === "DLS" ? "bg-purple-600 shadow-purple-200" : "bg-emerald-600 shadow-emerald-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wide border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                KIỂM TRA (ENTER)
+                <PencilLine size={16} className="inline-block mr-2" />
+                Luyện tập
               </button>
-            )}
-            {!showSolution && completed && (
               <button
                 type="button"
-                onClick={handleRestartSameProblem}
-                disabled={validationErrors.length > 0}
-                className="flex items-center gap-2 px-8 py-3 rounded-2xl font-black shadow-lg transition-transform active:scale-95 bg-slate-800 text-white shadow-slate-300 hover:bg-slate-900"
+                onClick={() => {
+                  setShowSolution(true);
+                  setFeedback({
+                    type: "success",
+                    text: "Đang xem đáp án mẫu — tắt để tự làm lại.",
+                  });
+                }}
+                disabled={validationErrors.length > 0 || trace.length === 0}
+                className={`px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-wide border shadow-sm ${validationErrors.length > 0 || trace.length === 0 ? "opacity-50 cursor-not-allowed" : "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}
               >
-                <RotateCcw size={18} />
-                LÀM LẠI TỪ ĐẦU
+                <BookOpen size={16} className="inline-block mr-2" />
+                Đáp án mẫu
               </button>
-            )}
+              {!showSolution && !completed && (
+                <button
+                  type="button"
+                  onClick={handleCheck}
+                  disabled={validationErrors.length > 0}
+                  className={`px-8 py-3 rounded-2xl text-white font-black shadow-lg transition-transform active:scale-95 ${algo === "DFS" ? "bg-indigo-600 shadow-indigo-200" : algo === "DLS" ? "bg-purple-600 shadow-purple-200" : "bg-emerald-600 shadow-emerald-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  KIỂM TRA (ENTER)
+                </button>
+              )}
+              {!showSolution && completed && (
+                <button
+                  type="button"
+                  onClick={handleRestartSameProblem}
+                  disabled={validationErrors.length > 0}
+                  className="flex items-center gap-2 px-8 py-3 rounded-2xl font-black shadow-lg transition-transform active:scale-95 bg-slate-800 text-white shadow-slate-300 hover:bg-slate-900"
+                >
+                  <RotateCcw size={18} />
+                  LÀM LẠI TỪ ĐẦU
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
