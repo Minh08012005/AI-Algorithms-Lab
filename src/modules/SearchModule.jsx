@@ -23,6 +23,20 @@ export default function SearchModule({
   showAlgoSelector = true,
   title = "Thực hành Thuật toán Tìm kiếm",
 }) {
+  const tokenizeAdjacency = (s) =>
+    ((s || "").toUpperCase().match(/[A-Z0-9]+/g) || []).filter(
+      (token) => token !== "TTKT" && token !== "DUNG",
+    );
+  const isSameAdjacency = (userAdj, correctAdj) => {
+    const userSet = new Set(tokenizeAdjacency(userAdj));
+    const correctSet = new Set(tokenizeAdjacency(correctAdj));
+    if (userSet.size !== correctSet.size) return false;
+    for (const node of correctSet) {
+      if (!userSet.has(node)) return false;
+    }
+    return true;
+  };
+
   const initialPracticeSession = useMemo(() => loadInitialPracticeState(), []);
   const [algo, setAlgo] = useState(() => {
     if (!showAlgoSelector) return initialAlgo;
@@ -261,11 +275,9 @@ export default function SearchModule({
     const norm = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
 
     const normExpand = norm(inputs.expand);
-    const normAdj = norm(inputs.adj);
     const normQ = norm(inputs.q);
     const normL = norm(inputs.l);
     const correctExpand = norm(correct.expand);
-    const correctAdj = norm(correct.adj);
     const correctQ = norm(correct.q);
     const correctL = norm(correct.l);
 
@@ -275,7 +287,7 @@ export default function SearchModule({
     // Enforce single convention: all fields must match exactly (case-insensitive, no punctuation)
     if (
       normExpand === correctExpand &&
-      (!requireAdj || normAdj === correctAdj) &&
+      (!requireAdj || isSameAdjacency(inputs.adj, correct.adj)) &&
       normQ === correctQ &&
       normL === correctL
     ) {

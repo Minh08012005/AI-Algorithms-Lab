@@ -22,6 +22,19 @@ const HINT_PENALTY = 10;
 const makeEmptyInputs = () => ({ expand: "", adj: "", l: "" });
 
 const normalize = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+const tokenizeAdjacency = (s) =>
+  ((s || "").toUpperCase().match(/[A-Z0-9]+/g) || []).filter(
+    (token) => token !== "TTKT" && token !== "DUNG",
+  );
+const isSameAdjacency = (userAdj, correctAdj) => {
+  const userSet = new Set(tokenizeAdjacency(userAdj));
+  const correctSet = new Set(tokenizeAdjacency(correctAdj));
+  if (userSet.size !== correctSet.size) return false;
+  for (const node of correctSet) {
+    if (!userSet.has(node)) return false;
+  }
+  return true;
+};
 
 const getAlgorithmLabel = (algo) =>
   algo === "HILL_CLIMBING" ? "Leo đồi" : "Best First Search";
@@ -240,16 +253,14 @@ export default function HeuristicSearchModule({
     }
 
     const normExpand = normalize(inputs.expand);
-    const normAdj = normalize(inputs.adj);
     const normL = normalize(inputs.l);
 
     const correctExpand = normalize(correct.expand);
-    const correctAdj = normalize(correct.adj);
     const correctL = normalize(correct.l);
 
     if (
       normExpand === correctExpand &&
-      (!adjRequired || normAdj === correctAdj) &&
+      (!adjRequired || isSameAdjacency(inputs.adj, correct.adj)) &&
       normL === correctL
     ) {
       const newIndex = history.length;
