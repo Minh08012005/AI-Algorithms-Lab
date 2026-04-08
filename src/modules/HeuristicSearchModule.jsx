@@ -19,7 +19,7 @@ import {
 const WRONG_PENALTY = 5;
 const HINT_PENALTY = 10;
 
-const makeEmptyInputs = () => ({ expand: "", adj: "", l: "" });
+const makeEmptyInputs = () => ({ expand: "", adj: "", l1: "", l: "" });
 
 const normalize = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
 const tokenizeAdjacency = (s) =>
@@ -236,10 +236,20 @@ export default function HeuristicSearchModule({
     if (!correct) return;
 
     const adjRequired = (correct.adj || "").trim().length > 0;
+    const l1Required =
+      algo === "HILL_CLIMBING" && (correct.l1 || "").trim().length > 0;
     if (adjRequired && (!inputs.adj || inputs.adj.trim() === "")) {
       setFeedback({
         type: "error",
         text: "Vui lòng điền ô Trạng thái kề trước khi kiểm tra.",
+      });
+      return;
+    }
+
+    if (l1Required && (!inputs.l1 || inputs.l1.trim() === "")) {
+      setFeedback({
+        type: "error",
+        text: "Vui lòng điền ô Danh sách L1 trước khi kiểm tra.",
       });
       return;
     }
@@ -253,14 +263,17 @@ export default function HeuristicSearchModule({
     }
 
     const normExpand = normalize(inputs.expand);
+    const normL1 = normalize(inputs.l1);
     const normL = normalize(inputs.l);
 
     const correctExpand = normalize(correct.expand);
+    const correctL1 = normalize(correct.l1);
     const correctL = normalize(correct.l);
 
     if (
       normExpand === correctExpand &&
       (!adjRequired || isSameAdjacency(inputs.adj, correct.adj)) &&
+      (!l1Required || normL1 === correctL1) &&
       normL === correctL
     ) {
       const newIndex = history.length;
@@ -488,6 +501,9 @@ export default function HeuristicSearchModule({
                   <th className="p-4 border-r border-slate-100">
                     Trạng thái kề
                   </th>
+                  {algo === "HILL_CLIMBING" && (
+                    <th className="p-4 border-r border-slate-100">Danh sách L1</th>
+                  )}
                   <th className="p-4">Danh sách L</th>
                 </tr>
               </thead>
@@ -504,6 +520,11 @@ export default function HeuristicSearchModule({
                         <td className="p-4 text-slate-600 border-r border-amber-100/60 font-mono text-xs">
                           {r.isGoal ? "TTKT/DỪNG" : r.adj ? r.adj : "—"}
                         </td>
+                        {algo === "HILL_CLIMBING" && (
+                          <td className="p-4 text-sky-700 border-r border-amber-100/60 font-mono text-xs font-black">
+                            {r.l1 || "—"}
+                          </td>
+                        )}
                         <td className="p-4 font-mono font-black text-xs text-emerald-700">
                           {r.l || "—"}
                         </td>
@@ -520,6 +541,11 @@ export default function HeuristicSearchModule({
                         <td className="p-4 text-slate-500 border-r border-slate-50 italic">
                           {r.adj || "—"}
                         </td>
+                        {algo === "HILL_CLIMBING" && (
+                          <td className="p-4 border-r border-slate-50 font-mono font-black text-sky-700">
+                            {r.l1 || "—"}
+                          </td>
+                        )}
                         <td className="p-4 font-mono font-black text-emerald-600">
                           {r.l}
                         </td>
@@ -560,6 +586,23 @@ export default function HeuristicSearchModule({
                         <div className="text-xs italic text-slate-400">—</div>
                       )}
                     </td>
+                    {algo === "HILL_CLIMBING" && (
+                      <td className="p-2 border-r border-slate-100">
+                        {trace[step] && trace[step].l1 && trace[step].l1.length > 0 ? (
+                          <input
+                            value={inputs.l1}
+                            onChange={(e) =>
+                              setInputs({ ...inputs, l1: e.target.value })
+                            }
+                            disabled={validationErrors.length > 0}
+                            className={`w-full p-2 border rounded-xl font-mono outline-none focus:ring-2 ring-indigo-500 shadow-sm ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                            placeholder="Nhập L1..."
+                          />
+                        ) : (
+                          <div className="text-xs italic text-slate-400 text-center">—</div>
+                        )}
+                      </td>
+                    )}
                     <td className="p-2">
                       <input
                         value={inputs.l}
