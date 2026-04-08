@@ -36,8 +36,21 @@ const isSameAdjacency = (userAdj, correctAdj) => {
   return true;
 };
 
-const getAlgorithmLabel = (algo) =>
-  algo === "HILL_CLIMBING" ? "Leo đồi" : "Best First Search";
+const getAlgorithmLabel = (algo) => {
+  if (algo === "HILL_CLIMBING") return "Leo đồi";
+  if (algo === "A_STAR") return "A* Search";
+  return "Best First Search";
+};
+
+const getAlgoAccent = (algo) => {
+  if (algo === "BEST_FIRST") {
+    return "bg-orange-600 shadow-orange-200";
+  }
+  if (algo === "A_STAR") {
+    return "bg-cyan-600 shadow-cyan-200";
+  }
+  return "bg-emerald-600 shadow-emerald-200";
+};
 
 export default function HeuristicSearchModule({
   initialAlgo = "BEST_FIRST",
@@ -83,7 +96,9 @@ export default function HeuristicSearchModule({
     subtitle ||
     (algo === "HILL_CLIMBING"
       ? "Bài làm luyện tập theo thứ tự h(n) nhỏ nhất"
-      : "Bài làm luyện tập theo lựa chọn h(n) tốt nhất");
+      : algo === "A_STAR"
+        ? "Bài làm luyện tập theo hàm f(n)=g(n)+h(n)"
+        : "Bài làm luyện tập theo lựa chọn h(n) tốt nhất");
 
   const { trace, finalPath } = useMemo(
     () =>
@@ -330,7 +345,7 @@ export default function HeuristicSearchModule({
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
           <div
-            className={`p-3 rounded-xl text-white shadow-lg ${algo === "BEST_FIRST" ? "bg-orange-600 shadow-orange-200" : "bg-emerald-600 shadow-emerald-200"}`}
+            className={`p-3 rounded-xl text-white shadow-lg ${getAlgoAccent(algo)}`}
           >
             <Zap size={24} />
           </div>
@@ -386,7 +401,7 @@ export default function HeuristicSearchModule({
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative">
             <div
-              className={`absolute top-0 left-0 w-full h-1.5 ${algo === "BEST_FIRST" ? "bg-orange-500" : "bg-emerald-500"}`}
+              className={`absolute top-0 left-0 w-full h-1.5 ${algo === "BEST_FIRST" ? "bg-orange-500" : algo === "A_STAR" ? "bg-cyan-500" : "bg-emerald-500"}`}
             />
             <h3 className="font-bold text-slate-800 mb-4 flex justify-between items-center">
               <span>Đồ thị mô phỏng</span>
@@ -483,6 +498,8 @@ export default function HeuristicSearchModule({
             <p className="text-sm leading-relaxed text-slate-300 italic">
               {algo === "BEST_FIRST"
                 ? "Best First Search: luôn chọn nút có h(n) nhỏ nhất từ danh sách mở rộng."
+                : algo === "A_STAR"
+                  ? "A*: chọn nút có f(n)=g(n)+h(n) nhỏ nhất từ OPEN để mở rộng tiếp."
                 : "Leo đồi: luôn chọn láng giềng có h(n) nhỏ nhất ở bước hiện tại, nên có thể kẹt ở cực trị địa phương."}
             </p>
           </div>
@@ -557,6 +574,8 @@ export default function HeuristicSearchModule({
                     className={
                       algo === "BEST_FIRST"
                         ? "bg-orange-50/30"
+                        : algo === "A_STAR"
+                          ? "bg-cyan-50/40"
                         : "bg-emerald-50/30"
                     }
                   >
@@ -697,7 +716,7 @@ export default function HeuristicSearchModule({
                   type="button"
                   onClick={handleCheck}
                   disabled={validationErrors.length > 0}
-                  className={`px-8 py-3 rounded-2xl text-white font-black shadow-lg transition-transform active:scale-95 ${algo === "BEST_FIRST" ? "bg-orange-600 shadow-orange-200" : "bg-emerald-600 shadow-emerald-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`px-8 py-3 rounded-2xl text-white font-black shadow-lg transition-transform active:scale-95 ${getAlgoAccent(algo)} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   KIỂM TRA (ENTER)
                 </button>

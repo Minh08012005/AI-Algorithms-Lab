@@ -1,5 +1,12 @@
 import React from "react";
-import { Layers, Play, Share2, Target, BrainCircuit } from "lucide-react";
+import {
+  Layers,
+  Play,
+  Share2,
+  Target,
+  BrainCircuit,
+  Sparkles,
+} from "lucide-react";
 
 const Sidebar = ({ currentTab, setTab }) => {
   return (
@@ -41,6 +48,12 @@ const Sidebar = ({ currentTab, setTab }) => {
           className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "hill-climbing" ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" : "text-slate-500 hover:bg-slate-50"}`}
         >
           <BrainCircuit size={18} /> Leo đồi
+        </button>
+        <button
+          onClick={() => setTab("a-star")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "a-star" ? "bg-cyan-600 text-white shadow-lg shadow-cyan-200" : "text-slate-500 hover:bg-slate-50"}`}
+        >
+          <Sparkles size={18} /> A* Search
         </button>
       </div>
 

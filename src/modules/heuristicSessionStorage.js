@@ -7,7 +7,8 @@ const normalize = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
 
 export function validatePersistedHeuristicSession(s, trace, algo) {
   if (!s || s.v !== 1 || !Array.isArray(trace) || trace.length < 1) return false;
-  if (!algo || !["BEST_FIRST", "HILL_CLIMBING"].includes(algo)) return false;
+  if (!algo || !["BEST_FIRST", "HILL_CLIMBING", "A_STAR"].includes(algo))
+    return false;
   if (s.algo !== algo) return false;
   if (
     typeof s.graphIdx !== "number" ||

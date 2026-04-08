@@ -4,6 +4,7 @@ import DFSModule from "./modules/DFSModule";
 import BFSModule from "./modules/BFSModule";
 import BestFirstSearchModule from "./modules/BestFirstSearchModule";
 import HillClimbingModule from "./modules/HillClimbingModule";
+import AStarModule from "./modules/AStarModule";
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState("home");
@@ -18,6 +19,8 @@ export default function App() {
         return <BestFirstSearchModule />;
       case "hill-climbing":
         return <HillClimbingModule />;
+      case "a-star":
+        return <AStarModule />;
       default:
         return (
           <div className="max-w-4xl mx-auto py-16 text-center animate-in zoom-in-95 duration-700">
