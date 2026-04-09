@@ -79,6 +79,7 @@ export const getAStarTrace = (graph) => {
 
     const successors = graph.edges[current.node] || [];
     const details = [];
+    const pendingOpenAdds = new Map();
 
     for (const edge of successors) {
       const v = edge.to;
@@ -105,13 +106,17 @@ export const getAStarTrace = (graph) => {
       };
       entryById[childEntry.id] = childEntry;
 
-      // If v already exists in OPEN, remove old version then insert improved one.
+      // Remove stale OPEN version now; insert improved entries in one pass after evaluating all neighbors.
       open = open.filter((x) => x.node !== v);
 
       // Re-open a closed node when a better path is found.
       if (closed.has(v)) closed.delete(v);
 
-      open = insertSortedByF(open, childEntry);
+      pendingOpenAdds.set(v, childEntry);
+    }
+
+    for (const item of pendingOpenAdds.values()) {
+      open = insertSortedByF(open, item);
     }
 
     rows.push({

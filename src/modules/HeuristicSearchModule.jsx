@@ -66,6 +66,10 @@ export default function HeuristicSearchModule({
   const [graphIdx, setGraphIdx] = useState(
     () => initialPracticeSession?.graphIdx ?? 0,
   );
+  const [selectedLevel, setSelectedLevel] = useState(() => {
+    const initialIdx = initialPracticeSession?.graphIdx ?? 0;
+    return heuristicGraphsData[initialIdx]?.level ?? 1;
+  });
   const [step, setStep] = useState(() => initialPracticeSession?.step ?? 1);
   const [score, setScore] = useState(() => initialPracticeSession?.score ?? 100);
   const [history, setHistory] = useState(
@@ -86,6 +90,21 @@ export default function HeuristicSearchModule({
   );
   const [showSolution, setShowSolution] = useState(
     () => initialPracticeSession?.showSolution ?? false,
+  );
+
+  const levelOptions = useMemo(() => {
+    const levels = Array.from(
+      new Set(heuristicGraphsData.map((g) => g.level).filter(Boolean)),
+    ).sort((a, b) => a - b);
+    return levels;
+  }, []);
+
+  const visibleGraphEntries = useMemo(
+    () =>
+      heuristicGraphsData
+        .map((g, idx) => ({ g, idx }))
+        .filter(({ g }) => g.level === selectedLevel),
+    [selectedLevel],
   );
 
   const graph = heuristicGraphsData[graphIdx];
@@ -235,6 +254,39 @@ export default function HeuristicSearchModule({
     resetState(getAlgorithmTrace(heuristicGraphsData[newIdx], algo));
   };
 
+  const handleLevelChange = (nextLevel) => {
+    if (nextLevel === selectedLevel) return;
+
+    setSelectedLevel(nextLevel);
+
+    const firstMatchIdx = heuristicGraphsData.findIndex(
+      (g) => g.level === nextLevel,
+    );
+    if (firstMatchIdx < 0) return;
+
+    setGraphIdx(firstMatchIdx);
+    resetState(getAlgorithmTrace(heuristicGraphsData[firstMatchIdx], algo));
+  };
+
+  useEffect(() => {
+    if (!graph || graph.level === selectedLevel) return;
+    const firstMatchIdx = heuristicGraphsData.findIndex(
+      (g) => g.level === selectedLevel,
+    );
+    if (firstMatchIdx < 0) return;
+    setGraphIdx(firstMatchIdx);
+    const tr = getAlgorithmTrace(heuristicGraphsData[firstMatchIdx], algo)?.trace || [];
+    setStep(1);
+    setHistory(tr.length > 0 ? [tr[0]] : []);
+    setInputs(makeEmptyInputs());
+    setFeedback(null);
+    setCompleted(false);
+    setScore(100);
+    setHintUsed(false);
+    setLastCorrectIndex(null);
+    setShowSolution(false);
+  }, [selectedLevel, graph, algo]);
+
   const handleRestartSameProblem = () => {
     resetState(getAlgorithmTrace(graph, algo));
     setFeedback({
@@ -359,17 +411,31 @@ export default function HeuristicSearchModule({
           </div>
         </div>
 
-        <select
-          value={graphIdx}
-          onChange={(e) => handleGraphChange(Number(e.target.value))}
-          className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
-        >
-          {heuristicGraphsData.map((g, i) => (
-            <option key={i} value={i}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedLevel}
+            onChange={(e) => handleLevelChange(Number(e.target.value))}
+            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
+          >
+            {levelOptions.map((level) => (
+              <option key={level} value={level}>
+                {`Muc ${level}`}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={graphIdx}
+            onChange={(e) => handleGraphChange(Number(e.target.value))}
+            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
+          >
+            {visibleGraphEntries.map(({ g, idx }) => (
+              <option key={g.id ?? idx} value={idx}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {!showSolution && (

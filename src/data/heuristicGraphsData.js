@@ -5,6 +5,7 @@
 export const heuristicGraphsData = [
   {
     id: 0,
+    level: 1,
     name: "Đề 1: A → B (h trên nút, slide chuẩn)",
     nodes: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "K"],
     edges: {
@@ -48,6 +49,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 1,
+    level: 1,
     name: "Đề 2: A → K (đồ thị có h, kiểu đề giấy)",
     nodes: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "K"],
     edges: {
@@ -91,6 +93,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 2,
+    level: 1,
     name: "Đề 3: S → T (h trên nút, nhánh rẽ nhiều)",
     nodes: ["S", "A", "B", "C", "D", "E", "F", "G", "T"],
     edges: {
@@ -131,6 +134,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 3,
+    level: 2,
     name: "Đề 4: P → Z (dạng cây ngắn)",
     nodes: ["P", "Q", "R", "S", "T", "U", "Z"],
     edges: {
@@ -165,6 +169,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 4,
+    level: 2,
     name: "Đề 5: M → H (có nhánh hội tụ)",
     nodes: ["M", "N", "O", "P", "Q", "R", "H"],
     edges: {
@@ -199,6 +204,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 5,
+    level: 2,
     name: "Đề 6: A → J (đồ thị có chu trình nhẹ)",
     nodes: ["A", "B", "C", "D", "E", "F", "G", "J"],
     edges: {
@@ -236,6 +242,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 6,
+    level: 2,
     name: "Đề 7: S → G (bẫy cực trị địa phương)",
     nodes: ["S", "A", "B", "C", "D", "E", "G"],
     edges: {
@@ -270,6 +277,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 7,
+    level: 3,
     name: "Đề 8: X → T (nhiều đường đi)",
     nodes: ["X", "A", "B", "C", "D", "E", "F", "T"],
     edges: {
@@ -307,6 +315,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 8,
+    level: 3,
     name: "Đề 9: L → K (nhánh sâu)",
     nodes: ["L", "M", "N", "O", "P", "Q", "K"],
     edges: {
@@ -341,6 +350,7 @@ export const heuristicGraphsData = [
   },
   {
     id: 9,
+    level: 3,
     name: "Đề 10: U → V (đồ thị tổng hợp)",
     nodes: ["U", "A", "B", "C", "D", "E", "F", "V"],
     edges: {

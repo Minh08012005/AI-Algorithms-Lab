@@ -19,16 +19,18 @@ const HINT_PENALTY = 10;
 
 const makeEmptyInputs = () => ({
   expand: "",
-  ttk: "",
-  k: "",
-  h: "",
-  g: "",
-  f: "",
+  rowCount: "",
+  rows: [],
   l: "",
   goalText: "",
 });
 
 const normalize = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+const parseRowCount = (value) => {
+  const n = Number.parseInt((value || "").trim(), 10);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, 30);
+};
 
 export default function AStarModule() {
   const initialSession = useMemo(() => {
@@ -45,6 +47,9 @@ export default function AStarModule() {
   }, []);
 
   const [graphIdx, setGraphIdx] = useState(() => initialSession?.graphIdx ?? 0);
+  const [selectedLevel, setSelectedLevel] = useState(
+    () => astarGraphsData[initialSession?.graphIdx ?? 0]?.level ?? 1,
+  );
   const [step, setStep] = useState(() => initialSession?.step ?? 0);
   const [score, setScore] = useState(() => initialSession?.score ?? 100);
   const [history, setHistory] = useState(() => initialSession?.history ?? []);
@@ -56,6 +61,18 @@ export default function AStarModule() {
   );
   const [showSolution, setShowSolution] = useState(() => initialSession?.showSolution ?? false);
   const [inputs, setInputs] = useState(() => initialSession?.inputs ?? makeEmptyInputs());
+
+  const levelOptions = useMemo(() => {
+    const levels = Array.from(new Set(astarGraphsData.map((g) => g.level))).sort(
+      (a, b) => a - b,
+    );
+    return levels;
+  }, []);
+
+  const visibleGraphEntries = useMemo(
+    () => astarGraphsData.map((g, idx) => ({ g, idx })).filter(({ g }) => g.level === selectedLevel),
+    [selectedLevel],
+  );
 
   const graph = astarGraphsData[graphIdx];
   const { rows, finalPath, finalCost } = useMemo(() => getAStarTrace(graph), [graph]);
@@ -158,6 +175,22 @@ export default function AStarModule() {
     setShowSolution(false);
   };
 
+  const handleLevelChange = (nextLevel) => {
+    if (nextLevel === selectedLevel) return;
+    setSelectedLevel(nextLevel);
+
+    const firstMatchIdx = astarGraphsData.findIndex((g) => g.level === nextLevel);
+    if (firstMatchIdx < 0) return;
+    handleGraphChange(firstMatchIdx);
+  };
+
+  useEffect(() => {
+    if (!graph || graph.level === selectedLevel) return;
+    const firstMatchIdx = astarGraphsData.findIndex((g) => g.level === selectedLevel);
+    if (firstMatchIdx < 0) return;
+    handleGraphChange(firstMatchIdx);
+  }, [selectedLevel, graph]);
+
   const handleHint = () => {
     if (completed || hintUsed || !currentRow || currentRow.isGoal) return;
     setScore((s) => Math.max(0, s - HINT_PENALTY));
@@ -196,6 +229,23 @@ export default function AStarModule() {
       return;
     }
 
+    if (!Array.isArray(inputs.rows) || inputs.rows.length === 0) {
+      setFeedback({
+        type: "error",
+        text: "Nhập n để tạo số dòng trước khi kiểm tra.",
+      });
+      return;
+    }
+
+    if (inputs.rows.length !== currentRow.details.length) {
+      setScore((s) => Math.max(0, s - WRONG_PENALTY));
+      setFeedback({
+        type: "error",
+        text: "Số dòng chưa khớp số đỉnh kề thực tế.",
+      });
+      return;
+    }
+
     const expected = {
       ttk: currentRow.details.map((x) => x.node).join(","),
       k: currentRow.details.map((x) => x.k).join(","),
@@ -205,13 +255,22 @@ export default function AStarModule() {
       l: currentRow.listL,
     };
 
+    const actual = {
+      ttk: inputs.rows.map((x) => x.ttk || "").join(","),
+      k: inputs.rows.map((x) => x.k || "").join(","),
+      h: inputs.rows.map((x) => x.h || "").join(","),
+      g: inputs.rows.map((x) => x.g || "").join(","),
+      f: inputs.rows.map((x) => x.f || "").join(","),
+      l: inputs.l,
+    };
+
     const allOk =
-      normalize(inputs.ttk) === normalize(expected.ttk) &&
-      normalize(inputs.k) === normalize(expected.k) &&
-      normalize(inputs.h) === normalize(expected.h) &&
-      normalize(inputs.g) === normalize(expected.g) &&
-      normalize(inputs.f) === normalize(expected.f) &&
-      normalize(inputs.l) === normalize(expected.l);
+      normalize(actual.ttk) === normalize(expected.ttk) &&
+      normalize(actual.k) === normalize(expected.k) &&
+      normalize(actual.h) === normalize(expected.h) &&
+      normalize(actual.g) === normalize(expected.g) &&
+      normalize(actual.f) === normalize(expected.f) &&
+      normalize(actual.l) === normalize(expected.l);
 
     if (!allOk) {
       setScore((s) => Math.max(0, s - WRONG_PENALTY));
@@ -273,17 +332,31 @@ export default function AStarModule() {
           </div>
         </div>
 
-        <select
-          value={graphIdx}
-          onChange={(e) => handleGraphChange(Number(e.target.value))}
-          className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-cyan-500"
-        >
-          {astarGraphsData.map((g, i) => (
-            <option key={g.id ?? i} value={i}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedLevel}
+            onChange={(e) => handleLevelChange(Number(e.target.value))}
+            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-cyan-500"
+          >
+            {levelOptions.map((level) => (
+              <option key={level} value={level}>
+                {`Muc ${level}`}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={graphIdx}
+            onChange={(e) => handleGraphChange(Number(e.target.value))}
+            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-cyan-500"
+          >
+            {visibleGraphEntries.map(({ g, idx }) => (
+              <option key={g.id ?? idx} value={idx}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {!showSolution && (
@@ -513,86 +586,166 @@ export default function AStarModule() {
                         </td>
                       </tr>
                     ) : (
-                      <tr className="border-b border-cyan-100 bg-cyan-50/40">
-                        <td className="p-2 border-r border-cyan-100">
-                          <input
-                            value={inputs.expand}
-                            onChange={(e) => setInputs((p) => ({ ...p, expand: e.target.value }))}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl text-center font-black outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="TT"
-                          />
-                        </td>
-                        <td className="p-2 border-r border-cyan-100">
-                          <input
-                            value={inputs.ttk}
-                            onChange={(e) => setInputs((p) => ({ ...p, ttk: e.target.value }))}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="D,E,C..."
-                          />
-                        </td>
-                        <td className="p-2 border-r border-cyan-100">
-                          <input
-                            value={inputs.k}
-                            onChange={(e) => setInputs((p) => ({ ...p, k: e.target.value }))}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="7,13,9..."
-                          />
-                        </td>
-                        <td className="p-2 border-r border-cyan-100">
-                          <input
-                            value={inputs.h}
-                            onChange={(e) => setInputs((p) => ({ ...p, h: e.target.value }))}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="6,8,15..."
-                          />
-                        </td>
-                        <td className="p-2 border-r border-cyan-100">
-                          <input
-                            value={inputs.g}
-                            onChange={(e) => setInputs((p) => ({ ...p, g: e.target.value }))}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="7,13,9..."
-                          />
-                        </td>
-                        <td className="p-2 border-r border-cyan-100">
-                          <input
-                            value={inputs.f}
-                            onChange={(e) => setInputs((p) => ({ ...p, f: e.target.value }))}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="13,21,24..."
-                          />
-                        </td>
-                        <td className="p-2">
-                          <input
-                            value={inputs.l}
-                            onChange={(e) => setInputs((p) => ({ ...p, l: e.target.value }))}
-                            onKeyDown={(e) => e.key === "Enter" && handleCheck()}
-                            disabled={validationErrors.length > 0}
-                            className={`w-full p-2 border rounded-xl font-mono outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
-                              validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            placeholder="D13,E21,C24,F27"
-                          />
-                        </td>
-                      </tr>
+                      <>
+                        <tr className="border-b border-cyan-100 bg-cyan-50/20">
+                          <td className="p-2 border-r border-cyan-100">
+                            <input
+                              value={inputs.expand}
+                              onChange={(e) => setInputs((p) => ({ ...p, expand: e.target.value }))}
+                              disabled={validationErrors.length > 0}
+                              className={`w-full p-2 border rounded-xl text-center font-black outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
+                              placeholder="TT"
+                            />
+                          </td>
+                          <td className="p-2" colSpan={6}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={inputs.rowCount || ""}
+                              onChange={(e) => {
+                                const rowCount = e.target.value;
+                                const n = parseRowCount(rowCount);
+                                setInputs((prev) => {
+                                  const oldRows = prev.rows || [];
+                                  const rows = Array.from({ length: n }, (_, idx) => ({
+                                    ttk: oldRows[idx]?.ttk || "",
+                                    k: oldRows[idx]?.k || "",
+                                    h: oldRows[idx]?.h || "",
+                                    g: oldRows[idx]?.g || "",
+                                    f: oldRows[idx]?.f || "",
+                                  }));
+                                  return { ...prev, rowCount, rows };
+                                });
+                              }}
+                              disabled={validationErrors.length > 0}
+                              className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
+                              placeholder="Nhập n để tạo n dòng"
+                            />
+                          </td>
+                        </tr>
+
+                        {(inputs.rows || []).length > 0 ? (
+                          (inputs.rows || []).map((_, detailIdx) => (
+                            <tr key={`input-${detailIdx}`} className="border-b border-cyan-100 bg-cyan-50/40">
+                              {detailIdx === 0 && (
+                                <td rowSpan={inputs.rows.length} className="p-2 border-r border-cyan-100 align-top text-center text-xs text-slate-500 font-bold">
+                                  n dong
+                                </td>
+                              )}
+                              <td className="p-2 border-r border-cyan-100">
+                                <input
+                                  value={inputs.rows?.[detailIdx]?.ttk || ""}
+                                  onChange={(e) =>
+                                    setInputs((p) => {
+                                      const rows = [...(p.rows || [])];
+                                      rows[detailIdx] = { ...(rows[detailIdx] || {}), ttk: e.target.value };
+                                      return { ...p, rows };
+                                    })
+                                  }
+                                  disabled={validationErrors.length > 0}
+                                  className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                    validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                  placeholder="TTK"
+                                />
+                              </td>
+                              <td className="p-2 border-r border-cyan-100">
+                                <input
+                                  value={inputs.rows?.[detailIdx]?.k || ""}
+                                  onChange={(e) =>
+                                    setInputs((p) => {
+                                      const rows = [...(p.rows || [])];
+                                      rows[detailIdx] = { ...(rows[detailIdx] || {}), k: e.target.value };
+                                      return { ...p, rows };
+                                    })
+                                  }
+                                  disabled={validationErrors.length > 0}
+                                  className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                    validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                  placeholder="k"
+                                />
+                              </td>
+                              <td className="p-2 border-r border-cyan-100">
+                                <input
+                                  value={inputs.rows?.[detailIdx]?.h || ""}
+                                  onChange={(e) =>
+                                    setInputs((p) => {
+                                      const rows = [...(p.rows || [])];
+                                      rows[detailIdx] = { ...(rows[detailIdx] || {}), h: e.target.value };
+                                      return { ...p, rows };
+                                    })
+                                  }
+                                  disabled={validationErrors.length > 0}
+                                  className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                    validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                  placeholder="h"
+                                />
+                              </td>
+                              <td className="p-2 border-r border-cyan-100">
+                                <input
+                                  value={inputs.rows?.[detailIdx]?.g || ""}
+                                  onChange={(e) =>
+                                    setInputs((p) => {
+                                      const rows = [...(p.rows || [])];
+                                      rows[detailIdx] = { ...(rows[detailIdx] || {}), g: e.target.value };
+                                      return { ...p, rows };
+                                    })
+                                  }
+                                  disabled={validationErrors.length > 0}
+                                  className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                    validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                  placeholder="g"
+                                />
+                              </td>
+                              <td className="p-2 border-r border-cyan-100">
+                                <input
+                                  value={inputs.rows?.[detailIdx]?.f || ""}
+                                  onChange={(e) =>
+                                    setInputs((p) => {
+                                      const rows = [...(p.rows || [])];
+                                      rows[detailIdx] = { ...(rows[detailIdx] || {}), f: e.target.value };
+                                      return { ...p, rows };
+                                    })
+                                  }
+                                  disabled={validationErrors.length > 0}
+                                  className={`w-full p-2 border rounded-xl outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                    validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                                  }`}
+                                  placeholder="f"
+                                />
+                              </td>
+                              {detailIdx === 0 && (
+                                <td rowSpan={inputs.rows.length} className="p-2 align-top">
+                                  <input
+                                    value={inputs.l}
+                                    onChange={(e) => setInputs((p) => ({ ...p, l: e.target.value }))}
+                                    onKeyDown={(e) => e.key === "Enter" && handleCheck()}
+                                    disabled={validationErrors.length > 0}
+                                    className={`w-full p-2 border rounded-xl font-mono outline-none focus:ring-2 ring-cyan-500 shadow-sm ${
+                                      validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""
+                                    }`}
+                                    placeholder="Danh sách L"
+                                  />
+                                </td>
+                              )}
+                            </tr>
+                          ))
+                        ) : (
+                          <tr className="border-b border-cyan-100 bg-cyan-50/30">
+                            <td className="p-2 text-center text-slate-400 italic text-xs" colSpan={7}>
+                              Nhập n để tạo số dòng cần điền.
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     )}
                   </>
                 )}
