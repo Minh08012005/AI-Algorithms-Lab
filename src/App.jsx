@@ -4,6 +4,7 @@ import DFSModule from "./modules/DFSModule";
 import BFSModule from "./modules/BFSModule";
 import BestFirstSearchModule from "./modules/BestFirstSearchModule";
 import HillClimbingModule from "./modules/HillClimbingModule";
+import AStarModule from "./modules/AStarModule";
 import MinimaxModule from "./modules/MinimaxModule";
 
 export default function App() {
@@ -19,6 +20,8 @@ export default function App() {
         return <BestFirstSearchModule />;
       case "hill-climbing":
         return <HillClimbingModule />;
+      case "a-star":
+        return <AStarModule />;
       case "minimax":
         return <MinimaxModule />;
       default:

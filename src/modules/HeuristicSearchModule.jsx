@@ -36,8 +36,21 @@ const isSameAdjacency = (userAdj, correctAdj) => {
   return true;
 };
 
-const getAlgorithmLabel = (algo) =>
-  algo === "HILL_CLIMBING" ? "Leo đồi" : "Best First Search";
+const getAlgorithmLabel = (algo) => {
+  if (algo === "HILL_CLIMBING") return "Leo đồi";
+  if (algo === "A_STAR") return "A* Search";
+  return "Best First Search";
+};
+
+const getAlgoAccent = (algo) => {
+  if (algo === "BEST_FIRST") {
+    return "bg-orange-600 shadow-orange-200";
+  }
+  if (algo === "A_STAR") {
+    return "bg-cyan-600 shadow-cyan-200";
+  }
+  return "bg-emerald-600 shadow-emerald-200";
+};
 
 export default function HeuristicSearchModule({
   initialAlgo = "BEST_FIRST",
@@ -60,6 +73,10 @@ export default function HeuristicSearchModule({
   const [graphIdx, setGraphIdx] = useState(
     () => initialPracticeSession?.graphIdx ?? 0,
   );
+  const [selectedLevel, setSelectedLevel] = useState(() => {
+    const initialIdx = initialPracticeSession?.graphIdx ?? 0;
+    return heuristicGraphsData[initialIdx]?.level ?? 1;
+  });
   const [step, setStep] = useState(() => initialPracticeSession?.step ?? 1);
   const [score, setScore] = useState(
     () => initialPracticeSession?.score ?? 100,
@@ -93,6 +110,21 @@ export default function HeuristicSearchModule({
     () => initialPracticeSession?.showSolution ?? false,
   );
 
+  const levelOptions = useMemo(() => {
+    const levels = Array.from(
+      new Set(heuristicGraphsData.map((g) => g.level).filter(Boolean)),
+    ).sort((a, b) => a - b);
+    return levels;
+  }, []);
+
+  const visibleGraphEntries = useMemo(
+    () =>
+      heuristicGraphsData
+        .map((g, idx) => ({ g, idx }))
+        .filter(({ g }) => g.level === selectedLevel),
+    [selectedLevel],
+  );
+
   const graph = heuristicGraphsData[graphIdx];
   const svgWrapperRef = useRef(null);
   const arrowMarkerId = `heuristic-arr-${algo}-${graphIdx}`;
@@ -101,7 +133,9 @@ export default function HeuristicSearchModule({
     subtitle ||
     (algo === "HILL_CLIMBING"
       ? "Bài làm luyện tập theo thứ tự h(n) nhỏ nhất"
-      : "Bài làm luyện tập theo lựa chọn h(n) tốt nhất");
+      : algo === "A_STAR"
+        ? "Bài làm luyện tập theo hàm f(n)=g(n)+h(n)"
+        : "Bài làm luyện tập theo lựa chọn h(n) tốt nhất");
 
   const { trace, finalPath } = useMemo(
     () =>
@@ -212,6 +246,39 @@ export default function HeuristicSearchModule({
     setGraphIdx(newIdx);
     resetState(getAlgorithmTrace(heuristicGraphsData[newIdx], algo));
   };
+
+  const handleLevelChange = (nextLevel) => {
+    if (nextLevel === selectedLevel) return;
+
+    setSelectedLevel(nextLevel);
+
+    const firstMatchIdx = heuristicGraphsData.findIndex(
+      (g) => g.level === nextLevel,
+    );
+    if (firstMatchIdx < 0) return;
+
+    setGraphIdx(firstMatchIdx);
+    resetState(getAlgorithmTrace(heuristicGraphsData[firstMatchIdx], algo));
+  };
+
+  useEffect(() => {
+    if (!graph || graph.level === selectedLevel) return;
+    const firstMatchIdx = heuristicGraphsData.findIndex(
+      (g) => g.level === selectedLevel,
+    );
+    if (firstMatchIdx < 0) return;
+    setGraphIdx(firstMatchIdx);
+    const tr = getAlgorithmTrace(heuristicGraphsData[firstMatchIdx], algo)?.trace || [];
+    setStep(1);
+    setHistory(tr.length > 0 ? [tr[0]] : []);
+    setInputs(makeEmptyInputs());
+    setFeedback(null);
+    setCompleted(false);
+    setScore(100);
+    setHintUsed(false);
+    setLastCorrectIndex(null);
+    setShowSolution(false);
+  }, [selectedLevel, graph, algo]);
 
   const handleRestartSameProblem = () => {
     resetState(getAlgorithmTrace(graph, algo));
@@ -325,7 +392,7 @@ export default function HeuristicSearchModule({
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-4">
         <div className="flex items-center gap-4">
           <div
-            className={`p-3 rounded-xl text-white shadow-lg ${algo === "BEST_FIRST" ? "bg-orange-600 shadow-orange-200" : "bg-emerald-600 shadow-emerald-200"}`}
+            className={`p-3 rounded-xl text-white shadow-lg ${getAlgoAccent(algo)}`}
           >
             <Zap size={24} />
           </div>
@@ -339,17 +406,31 @@ export default function HeuristicSearchModule({
           </div>
         </div>
 
-        <select
-          value={graphIdx}
-          onChange={(e) => handleGraphChange(Number(e.target.value))}
-          className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
-        >
-          {heuristicGraphsData.map((g, i) => (
-            <option key={i} value={i}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedLevel}
+            onChange={(e) => handleLevelChange(Number(e.target.value))}
+            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
+          >
+            {levelOptions.map((level) => (
+              <option key={level} value={level}>
+                {`Muc ${level}`}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={graphIdx}
+            onChange={(e) => handleGraphChange(Number(e.target.value))}
+            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
+          >
+            {visibleGraphEntries.map(({ g, idx }) => (
+              <option key={g.id ?? idx} value={idx}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {!showSolution && (
@@ -381,7 +462,7 @@ export default function HeuristicSearchModule({
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative">
             <div
-              className={`absolute top-0 left-0 w-full h-1.5 ${algo === "BEST_FIRST" ? "bg-orange-500" : "bg-emerald-500"}`}
+              className={`absolute top-0 left-0 w-full h-1.5 ${algo === "BEST_FIRST" ? "bg-orange-500" : algo === "A_STAR" ? "bg-cyan-500" : "bg-emerald-500"}`}
             />
             <h3 className="font-bold text-slate-800 mb-4 flex justify-between items-center">
               <span>Đồ thị mô phỏng</span>
@@ -483,6 +564,8 @@ export default function HeuristicSearchModule({
             <p className="text-sm leading-relaxed text-slate-300 italic">
               {algo === "BEST_FIRST"
                 ? "Best First Search: luôn chọn nút có h(n) nhỏ nhất từ danh sách mở rộng."
+                : algo === "A_STAR"
+                  ? "A*: chọn nút có f(n)=g(n)+h(n) nhỏ nhất từ OPEN để mở rộng tiếp."
                 : "Leo đồi: luôn chọn láng giềng có h(n) nhỏ nhất ở bước hiện tại, nên có thể kẹt ở cực trị địa phương."}
             </p>
           </div>
@@ -559,6 +642,8 @@ export default function HeuristicSearchModule({
                     className={
                       algo === "BEST_FIRST"
                         ? "bg-orange-50/30"
+                        : algo === "A_STAR"
+                          ? "bg-cyan-50/40"
                         : "bg-emerald-50/30"
                     }
                   >
@@ -709,7 +794,7 @@ export default function HeuristicSearchModule({
                   type="button"
                   onClick={handleCheck}
                   disabled={validationErrors.length > 0}
-                  className={`px-8 py-3 rounded-2xl text-white font-black shadow-lg transition-transform active:scale-95 ${algo === "BEST_FIRST" ? "bg-orange-600 shadow-orange-200" : "bg-emerald-600 shadow-emerald-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`px-8 py-3 rounded-2xl text-white font-black shadow-lg transition-transform active:scale-95 ${getAlgoAccent(algo)} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   KIỂM TRA (ENTER)
                 </button>
