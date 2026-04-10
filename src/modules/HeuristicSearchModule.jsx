@@ -63,6 +63,13 @@ export default function HeuristicSearchModule({
     [algo],
   );
 
+  // Precompute initial trace for initial state derivation (avoid setState in effects)
+  const _initialGraph =
+    heuristicGraphsData[initialPracticeSession?.graphIdx ?? 0];
+  const _initialTrace = _initialGraph
+    ? getAlgorithmTrace(_initialGraph, algo).trace
+    : [];
+
   const [graphIdx, setGraphIdx] = useState(
     () => initialPracticeSession?.graphIdx ?? 0,
   );
@@ -71,13 +78,24 @@ export default function HeuristicSearchModule({
     return heuristicGraphsData[initialIdx]?.level ?? 1;
   });
   const [step, setStep] = useState(() => initialPracticeSession?.step ?? 1);
-  const [score, setScore] = useState(() => initialPracticeSession?.score ?? 100);
-  const [history, setHistory] = useState(
-    () => initialPracticeSession?.history ?? [],
+  const [score, setScore] = useState(
+    () => initialPracticeSession?.score ?? 100,
   );
-  const [inputs, setInputs] = useState(
-    () => initialPracticeSession?.inputs ?? makeEmptyInputs(),
-  );
+  const [history, setHistory] = useState(() => {
+    if (initialPracticeSession?.history) return initialPracticeSession.history;
+    return _initialTrace && _initialTrace.length > 0 ? [_initialTrace[0]] : [];
+  });
+  const [inputs, setInputs] = useState(() => {
+    if (initialPracticeSession?.inputs) return initialPracticeSession.inputs;
+    const initStep = initialPracticeSession?.step ?? 1;
+    if (_initialTrace && _initialTrace.length > initStep) {
+      return {
+        ...makeEmptyInputs(),
+        expand: _initialTrace[initStep].expand || "",
+      };
+    }
+    return makeEmptyInputs();
+  });
   const [feedback, setFeedback] = useState(null);
   const [completed, setCompleted] = useState(
     () => initialPracticeSession?.completed ?? false,
@@ -207,33 +225,8 @@ export default function HeuristicSearchModule({
     validationErrors.length,
   ]);
 
-  useEffect(() => {
-    if (history.length === 0 && trace.length > 0) {
-      setHistory([trace[0]]);
-    }
-  }, [trace, history.length]);
-
-  useEffect(() => {
-    if (lastCorrectIndex != null && lastCorrectIndex >= history.length) {
-      setLastCorrectIndex(history.length - 1);
-    }
-  }, [history, lastCorrectIndex]);
-
-  useEffect(() => {
-    if (!completed && trace && trace[step]) {
-      if (step === 1) {
-        setInputs((prev) => ({
-          ...prev,
-          expand:
-            prev.expand && prev.expand.trim() !== ""
-              ? prev.expand
-              : trace[step].expand || "",
-        }));
-      } else {
-        setInputs((prev) => ({ ...prev, expand: "" }));
-      }
-    }
-  }, [step, trace, completed]);
+  // Note: initial `history`, `inputs` and `lastCorrectIndex` are derived above
+  // to avoid calling setState synchronously inside effects (ESLint react-hooks rule).
 
   const resetState = (newTrace) => {
     const tr = Array.isArray(newTrace) ? newTrace : newTrace?.trace || [];
@@ -296,7 +289,9 @@ export default function HeuristicSearchModule({
   };
 
   const canRestartSameProblem =
-    !showSolution && validationErrors.length === 0 && (completed || history.length > 1);
+    !showSolution &&
+    validationErrors.length === 0 &&
+    (completed || history.length > 1);
 
   const handleCheck = () => {
     const correct = trace[step];
@@ -457,8 +452,8 @@ export default function HeuristicSearchModule({
           <p className="font-bold mb-1">Chế độ đáp án mẫu</p>
           <p className="text-amber-900/90 leading-relaxed">
             Bảng bên phải là kết quả đúng theo {pageTitle} và đề đang chọn. Chọn
-            &quot;Luyện tập&quot; để nhập lại — tiến độ cũ vẫn giữ nếu bạn không đổi
-            đề. Dùng &quot;Làm lại từ đầu&quot; để reset cùng một đề.
+            &quot;Luyện tập&quot; để nhập lại — tiến độ cũ vẫn giữ nếu bạn không
+            đổi đề. Dùng &quot;Làm lại từ đầu&quot; để reset cùng một đề.
           </p>
         </div>
       )}
@@ -486,7 +481,10 @@ export default function HeuristicSearchModule({
                   Đồ thị không có dữ liệu hiển thị.
                 </div>
               ) : (
-                <div ref={svgWrapperRef} style={{ maxHeight: 420, overflow: "auto" }}>
+                <div
+                  ref={svgWrapperRef}
+                  style={{ maxHeight: 420, overflow: "auto" }}
+                >
                   <svg viewBox="0 0 350 350" className="w-full h-auto">
                     <defs>
                       <marker
@@ -505,35 +503,37 @@ export default function HeuristicSearchModule({
                     {(() => {
                       const lines = [];
                       const nodeHalf = 24;
-                      Object.entries(graph.edges || {}).forEach(([from, tos]) => {
-                        (tos || []).forEach((to) => {
-                          const p1 = graph.positions?.[from];
-                          const p2 = graph.positions?.[to];
-                          if (!p1 || !p2) return;
-                          const dx = p2[0] - p1[0];
-                          const dy = p2[1] - p1[1];
-                          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                          const ux = dx / dist;
-                          const uy = dy / dist;
-                          const startX = p1[0] + ux * nodeHalf * 0.6;
-                          const startY = p1[1] + uy * nodeHalf * 0.6;
-                          const endX = p2[0] - ux * nodeHalf;
-                          const endY = p2[1] - uy * nodeHalf;
-                          lines.push(
-                            <line
-                              key={`${from}-${to}`}
-                              x1={startX}
-                              y1={startY}
-                              x2={endX}
-                              y2={endY}
-                              stroke="#94a3b8"
-                              strokeWidth={1.35}
-                              markerEnd={`url(#${arrowMarkerId})`}
-                              strokeLinecap="round"
-                            />,
-                          );
-                        });
-                      });
+                      Object.entries(graph.edges || {}).forEach(
+                        ([from, tos]) => {
+                          (tos || []).forEach((to) => {
+                            const p1 = graph.positions?.[from];
+                            const p2 = graph.positions?.[to];
+                            if (!p1 || !p2) return;
+                            const dx = p2[0] - p1[0];
+                            const dy = p2[1] - p1[1];
+                            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                            const ux = dx / dist;
+                            const uy = dy / dist;
+                            const startX = p1[0] + ux * nodeHalf * 0.6;
+                            const startY = p1[1] + uy * nodeHalf * 0.6;
+                            const endX = p2[0] - ux * nodeHalf;
+                            const endY = p2[1] - uy * nodeHalf;
+                            lines.push(
+                              <line
+                                key={`${from}-${to}`}
+                                x1={startX}
+                                y1={startY}
+                                x2={endX}
+                                y2={endY}
+                                stroke="#94a3b8"
+                                strokeWidth={1.35}
+                                markerEnd={`url(#${arrowMarkerId})`}
+                                strokeLinecap="round"
+                              />,
+                            );
+                          });
+                        },
+                      );
                       return <g>{lines}</g>;
                     })()}
                     {graph.nodes.map((n) => {
@@ -585,7 +585,9 @@ export default function HeuristicSearchModule({
                     Trạng thái kề
                   </th>
                   {algo === "HILL_CLIMBING" && (
-                    <th className="p-4 border-r border-slate-100">Danh sách L1</th>
+                    <th className="p-4 border-r border-slate-100">
+                      Danh sách L1
+                    </th>
                   )}
                   <th className="p-4">Danh sách L</th>
                 </tr>
@@ -657,7 +659,9 @@ export default function HeuristicSearchModule({
                       />
                     </td>
                     <td className="p-2 text-center text-slate-400 italic text-xs border-r border-slate-100">
-                      {trace[step] && trace[step].adj && trace[step].adj.length > 0 ? (
+                      {trace[step] &&
+                      trace[step].adj &&
+                      trace[step].adj.length > 0 ? (
                         <input
                           value={inputs.adj}
                           onChange={(e) =>
@@ -673,7 +677,9 @@ export default function HeuristicSearchModule({
                     </td>
                     {algo === "HILL_CLIMBING" && (
                       <td className="p-2 border-r border-slate-100">
-                        {trace[step] && trace[step].l1 && trace[step].l1.length > 0 ? (
+                        {trace[step] &&
+                        trace[step].l1 &&
+                        trace[step].l1.length > 0 ? (
                           <input
                             value={inputs.l1}
                             onChange={(e) =>
@@ -684,7 +690,9 @@ export default function HeuristicSearchModule({
                             placeholder="Nhập L1..."
                           />
                         ) : (
-                          <div className="text-xs italic text-slate-400 text-center">—</div>
+                          <div className="text-xs italic text-slate-400 text-center">
+                            —
+                          </div>
                         )}
                       </td>
                     )}
@@ -692,7 +700,9 @@ export default function HeuristicSearchModule({
                       <input
                         value={inputs.l}
                         onKeyDown={(e) => e.key === "Enter" && handleCheck()}
-                        onChange={(e) => setInputs({ ...inputs, l: e.target.value })}
+                        onChange={(e) =>
+                          setInputs({ ...inputs, l: e.target.value })
+                        }
                         disabled={validationErrors.length > 0}
                         className={`w-full p-2 border rounded-xl font-mono outline-none focus:ring-2 ring-indigo-500 shadow-sm ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                         placeholder="Nhập L..."
@@ -723,11 +733,13 @@ export default function HeuristicSearchModule({
                   Đường đi: {finalPath.join(" → ")}
                 </div>
               )}
-              {showSolution && (!finalPath || finalPath.length === 0) && trace.length > 1 && (
-                <div className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700">
-                  Thuật toán kết thúc mà không tới đích.
-                </div>
-              )}
+              {showSolution &&
+                (!finalPath || finalPath.length === 0) &&
+                trace.length > 1 && (
+                  <div className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 text-slate-700">
+                    Thuật toán kết thúc mà không tới đích.
+                  </div>
+                )}
               {!showSolution && !completed && !hintUsed && (
                 <button
                   type="button"

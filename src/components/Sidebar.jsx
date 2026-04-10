@@ -7,6 +7,7 @@ import {
   BrainCircuit,
   Sparkles,
 } from "lucide-react";
+import { Layers, Play, Share2, Target, BrainCircuit, Zap } from "lucide-react";
 
 const Sidebar = ({ currentTab, setTab }) => {
   return (
@@ -54,6 +55,18 @@ const Sidebar = ({ currentTab, setTab }) => {
           className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "a-star" ? "bg-cyan-600 text-white shadow-lg shadow-cyan-200" : "text-slate-500 hover:bg-slate-50"}`}
         >
           <Sparkles size={18} /> A* Search
+        </button>
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2">
+          Trò chơi
+        </p>
+        <button
+          onClick={() => setTab("minimax")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "minimax" ? "bg-purple-600 text-white shadow-lg shadow-purple-200" : "text-slate-500 hover:bg-slate-50"}`}
+        >
+          <Zap size={18} /> Minimax
         </button>
       </div>
 
