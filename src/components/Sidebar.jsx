@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Layers,
-  Play,
-  Share2,
-  Target,
-  BrainCircuit,
-  Sparkles,
-} from "lucide-react";
-import { Layers, Play, Share2, Target, BrainCircuit, Zap } from "lucide-react";
+import { Layers, Play, Share2, Target, BrainCircuit, Zap, Sparkles } from "lucide-react";
 
 const Sidebar = ({ currentTab, setTab }) => {
   return (
