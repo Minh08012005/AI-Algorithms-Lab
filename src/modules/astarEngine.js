@@ -1,30 +1,13 @@
-const compareByFThenName = (a, b) => {
-  if (a.f !== b.f) return a.f - b.f;
-  return a.node.localeCompare(b.node, undefined, { sensitivity: "base" });
-};
+const sortByF = (a, b) => a.f - b.f;
 
-const insertSortedByF = (open, item) => {
-  const out = [...open];
-  let lo = 0;
-  let hi = out.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (compareByFThenName(out[mid], item) <= 0) lo = mid + 1;
-    else hi = mid;
-  }
-  out.splice(lo, 0, item);
-  return out;
-};
+const formatListL = (listL) => (listL || []).map((x) => `${x.node}${x.f}`).join(",");
 
-const formatListL = (open) =>
-  (open || []).map((x) => `${x.node}${x.f}`).join(",");
-
-const buildBackwardPath = (entryById, goalEntry) => {
+const buildBackwardPath = (goal, parent) => {
   const path = [];
-  let cur = goalEntry;
-  while (cur) {
-    path.push(cur.node);
-    cur = cur.parentId != null ? entryById[cur.parentId] : null;
+  let t = goal;
+  while (t !== undefined && t !== null && t !== "") {
+    path.push(t);
+    t = parent[t];
   }
   return path;
 };
@@ -34,96 +17,55 @@ export const getAStarTrace = (graph) => {
     return { rows: [], finalPath: [], finalCost: null };
   }
 
-  let idSeed = 0;
-  const entryById = {};
-
-  const startEntry = {
-    id: idSeed++,
-    node: graph.start,
-    g: 0,
-    h: graph.heuristic[graph.start],
-    f: graph.heuristic[graph.start],
-    parentId: null,
-  };
-  entryById[startEntry.id] = startEntry;
-
-  let open = [startEntry];
-  const closed = new Set();
-  const bestG = { [graph.start]: 0 };
+  let listL = [{ node: graph.start, f: graph.heuristic[graph.start] ?? 0 }];
+  const g = { [graph.start]: 0 };
+  const parent = { [graph.start]: "" };
   const rows = [];
 
-  while (open.length > 0) {
-    const current = open[0];
-    open = open.slice(1);
+  while (listL.length > 0) {
+    const current = listL[0];
+    listL = listL.slice(1);
+    const u = current.node;
 
-    // If this entry is stale (already have a better g), skip it.
-    if (bestG[current.node] !== current.g) {
-      continue;
-    }
-
-    if (current.node === graph.goal) {
-      const backPath = buildBackwardPath(entryById, current);
+    if (u === graph.goal) {
+      const backPath = buildBackwardPath(graph.goal, parent);
+      const goalCost = g[graph.goal] ?? null;
       rows.push({
-        expand: current.node,
+        expand: u,
         isGoal: true,
-        goalText: `TTKT/dừng, đường đi ${backPath.join(" <- ")}, độ dài ${current.g}`,
+        goalText: `TTKT/dung, duong di ${backPath.join(" <- ")}, do dai ${goalCost ?? "?"}`,
       });
       return {
         rows,
         finalPath: [...backPath].reverse(),
-        finalCost: current.g,
+        finalCost: goalCost,
       };
     }
 
-    closed.add(current.node);
-
-    const successors = graph.edges[current.node] || [];
+    const successors = graph.edges[u] || [];
     const details = [];
-    const pendingOpenAdds = new Map();
 
     for (const edge of successors) {
       const v = edge.to;
       const k = edge.cost;
-      const h = graph.heuristic[v];
-      const g = current.g + k;
-      const f = g + h;
+      const hv = graph.heuristic[v] ?? 0;
+      const gv = (g[u] ?? 0) + k;
+      const fv = gv + hv;
 
-      details.push({ node: v, k, h, g, f });
+      g[v] = gv;
+      parent[v] = u;
+      listL.push({ node: v, f: fv });
 
-      const oldBest = bestG[v];
-      const isBetter = oldBest === undefined || g < oldBest;
-      if (!isBetter) continue;
-
-      bestG[v] = g;
-
-      const childEntry = {
-        id: idSeed++,
-        node: v,
-        g,
-        h,
-        f,
-        parentId: current.id,
-      };
-      entryById[childEntry.id] = childEntry;
-
-      // Remove stale OPEN version now; insert improved entries in one pass after evaluating all neighbors.
-      open = open.filter((x) => x.node !== v);
-
-      // Re-open a closed node when a better path is found.
-      if (closed.has(v)) closed.delete(v);
-
-      pendingOpenAdds.set(v, childEntry);
+      details.push({ node: v, k, h: hv, g: gv, f: fv });
     }
 
-    for (const item of pendingOpenAdds.values()) {
-      open = insertSortedByF(open, item);
-    }
+    listL = [...listL].sort(sortByF);
 
     rows.push({
-      expand: current.node,
+      expand: u,
       isGoal: false,
       details,
-      listL: formatListL(open),
+      listL: formatListL(listL),
     });
   }
 
