@@ -5,6 +5,7 @@ import BFSModule from "./modules/BFSModule";
 import BestFirstSearchModule from "./modules/BestFirstSearchModule";
 import HillClimbingModule from "./modules/HillClimbingModule";
 import AStarModule from "./modules/AStarModule";
+import BranchAndBoundModule from "./modules/BranchAndBoundModule";
 import MinimaxModule from "./modules/MinimaxModule";
 
 export default function App() {
@@ -22,6 +23,8 @@ export default function App() {
         return <HillClimbingModule />;
       case "a-star":
         return <AStarModule />;
+      case "branch-bound":
+        return <BranchAndBoundModule />;
       case "minimax":
         return <MinimaxModule />;
       default:

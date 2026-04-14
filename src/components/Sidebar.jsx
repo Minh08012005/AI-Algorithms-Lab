@@ -1,5 +1,5 @@
 import React from "react";
-import { Layers, Play, Share2, Target, BrainCircuit, Zap, Sparkles } from "lucide-react";
+import { Layers, Play, Share2, Target, BrainCircuit, Zap, Sparkles, GitBranch } from "lucide-react";
 
 const Sidebar = ({ currentTab, setTab }) => {
   return (
@@ -47,6 +47,12 @@ const Sidebar = ({ currentTab, setTab }) => {
           className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "a-star" ? "bg-cyan-600 text-white shadow-lg shadow-cyan-200" : "text-slate-500 hover:bg-slate-50"}`}
         >
           <Sparkles size={18} /> A* Search
+        </button>
+        <button
+          onClick={() => setTab("branch-bound")}
+          className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl font-bold transition-all ${currentTab === "branch-bound" ? "bg-teal-600 text-white shadow-lg shadow-teal-200" : "text-slate-500 hover:bg-slate-50"}`}
+        >
+          <GitBranch size={18} /> Nhánh Cận
         </button>
       </div>
 
