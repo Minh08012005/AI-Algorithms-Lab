@@ -7,6 +7,7 @@ import HillClimbingModule from "./modules/HillClimbingModule";
 import AStarModule from "./modules/AStarModule";
 import BranchAndBoundModule from "./modules/BranchAndBoundModule";
 import MinimaxModule from "./modules/MinimaxModule";
+import { Play } from "lucide-react";
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState("home");
@@ -48,11 +49,35 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans">
-      <Sidebar currentTab={currentTab} setTab={setCurrentTab} />
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto">
-        {renderContent()}
-      </main>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      {/* GLOBAL HEADER */}
+      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-50 shadow-sm">
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => setCurrentTab("home")}
+        >
+          <div className="bg-indigo-600 text-white p-2 rounded-xl shadow-lg">
+            <Play size={18} fill="currentColor" />
+          </div>
+          <h1 className="font-black text-xl tracking-tighter italic text-slate-900">AI.LAB</h1>
+        </div>
+
+        <div className="hidden md:flex items-center gap-6">
+          <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Hệ thống đang hoạt động
+          </div>
+          <div className="h-4 w-[1px] bg-slate-200" />
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Học viện AI - Lab thực hành</p>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar currentTab={currentTab} setTab={setCurrentTab} />
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+          {renderContent()}
+        </main>
+      </div>
     </div>
   );
 }

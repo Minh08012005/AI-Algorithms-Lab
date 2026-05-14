@@ -42,9 +42,10 @@ export default function SearchModule({
     if (!showAlgoSelector) return initialAlgo;
     return initialPracticeSession?.algo ?? initialAlgo;
   });
-  const [graphIdx, setGraphIdx] = useState(
-    () => initialPracticeSession?.graphIdx ?? 0,
-  );
+  const [graphIdx, setGraphIdx] = useState(() => {
+    const idx = initialPracticeSession?.graphIdx ?? 0;
+    return graphsData[idx] ? idx : 0;
+  });
   const [step, setStep] = useState(() => initialPracticeSession?.step ?? 1);
   const [score, setScore] = useState(
     () => initialPracticeSession?.score ?? 100,
@@ -341,83 +342,69 @@ export default function SearchModule({
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div
-            className={`p-3 rounded-xl text-white shadow-lg ${algo === "DFS" ? "bg-indigo-600 shadow-indigo-200" : "bg-emerald-600 shadow-emerald-200"}`}
-          >
-            <ArrowRightLeft size={24} />
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+      {/* Sticky Header Bộ chọn */}
+      <div className="sticky top-[-24px] z-20 bg-slate-50/80 backdrop-blur-md pb-4 mb-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div
+              className={`p-2 rounded-lg text-white shadow-md ${algo === "DFS" ? "bg-indigo-600 shadow-indigo-200" : "bg-emerald-600 shadow-emerald-200"}`}
+            >
+              <Zap size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800 uppercase leading-none">
+                {title}
+              </h2>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                Luyện tập duyệt đồ thị theo {algo}
+              </p>
+            </div>
           </div>
 
-          {completed && finalPath && finalPath.length > 0 && (
-            <div className="p-4 border-t bg-emerald-50/40">
-              <h4 className="text-sm font-bold text-emerald-700 mb-2">
-                Kết quả:
-              </h4>
-              <div className="text-sm font-mono text-emerald-800">
-                Đường đi tìm được: {finalPath.join(" → ")}
+          <div className="flex flex-wrap items-center gap-4">
+            {showAlgoSelector && (
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-2">
+                <button
+                  onClick={() => handleAlgoChange("DFS")}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${algo === "DFS" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
+                >
+                  DFS
+                </button>
+                <button
+                  onClick={() => handleAlgoChange("BFS")}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${algo === "BFS" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"}`}
+                >
+                  BFS
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Đề thi:</span>
+              <select
+                value={graphIdx}
+                onChange={(e) => handleGraphChange(Number(e.target.value))}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500 min-w-[200px]"
+              >
+                {graphsData.map((g, idx) => (
+                  <option key={g.id ?? idx} value={idx}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="h-8 w-[1px] bg-slate-200 mx-2 hidden md:block" />
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Điểm:</span>
+              <div className="bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 font-black text-emerald-600 text-sm">
+                {score}%
               </div>
             </div>
-          )}
-          <div>
-            <h2 className="text-xl font-black text-slate-800 uppercase leading-none mb-1">
-              {title}
-            </h2>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-              {algo} Algorithm Mode
-            </p>
           </div>
         </div>
-
-        {showAlgoSelector && (
-          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => handleAlgoChange("DFS")}
-              disabled={validationErrors.length > 0}
-              className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "DFS" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              DFS
-            </button>
-            <button
-              onClick={() => handleAlgoChange("BFS")}
-              disabled={validationErrors.length > 0}
-              className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "BFS" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              BFS
-            </button>
-            <button
-              onClick={() => handleAlgoChange("DLS")}
-              disabled={validationErrors.length > 0}
-              className={`px-6 py-2 rounded-xl font-bold transition-all ${algo === "DLS" ? "bg-white text-purple-600 shadow-sm" : "text-slate-500 hover:bg-slate-200"} ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              DLS
-            </button>
-          </div>
-        )}
-
-        <select
-          value={graphIdx}
-          onChange={(e) => handleGraphChange(Number(e.target.value))}
-          className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
-        >
-          {graphsData.map((g, i) => (
-            <option key={i} value={i}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-
-        {canRestartSameProblem && (
-          <button
-            type="button"
-            onClick={handleRestartSameProblem}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wide border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
-          >
-            <RotateCcw size={16} />
-            Làm lại từ đầu
-          </button>
-        )}
       </div>
 
       {/* Top score progress bar (ẩn khi chỉ xem đáp án) */}
@@ -450,7 +437,7 @@ export default function SearchModule({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-6 space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative">
             <div
               className={`absolute top-0 left-0 w-full h-1.5 ${algo === "DFS" ? "bg-indigo-500" : "bg-emerald-500"}`}
@@ -474,9 +461,9 @@ export default function SearchModule({
               ) : (
                 <div
                   ref={svgWrapperRef}
-                  style={{ maxHeight: 420, overflow: "auto" }}
+                  style={{ maxHeight: 550, overflow: "auto" }}
                 >
-                  <svg viewBox="0 0 350 350" className="w-full h-auto">
+                  <svg viewBox="0 0 800 700" className="w-full h-auto">
                     <defs>
                       <marker
                         id="arr"
@@ -561,7 +548,7 @@ export default function SearchModule({
         </div>
 
         <div
-          className={`lg:col-span-8 bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col ${showSolution ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}
+          className={`lg:col-span-6 bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col ${showSolution ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}
         >
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left">

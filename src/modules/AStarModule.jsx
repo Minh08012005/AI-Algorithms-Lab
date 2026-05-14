@@ -46,10 +46,14 @@ export default function AStarModule() {
     }
   }, []);
 
-  const [graphIdx, setGraphIdx] = useState(() => initialSession?.graphIdx ?? 0);
-  const [selectedLevel, setSelectedLevel] = useState(
-    () => astarGraphsData[initialSession?.graphIdx ?? 0]?.level ?? 1,
-  );
+  const [graphIdx, setGraphIdx] = useState(() => {
+    const idx = initialSession?.graphIdx ?? 0;
+    return astarGraphsData[idx] ? idx : 0;
+  });
+  const [selectedLevel, setSelectedLevel] = useState(() => {
+    const idx = initialSession?.graphIdx ?? 0;
+    return astarGraphsData[idx]?.level ?? (astarGraphsData[0]?.level || 1);
+  });
   const [step, setStep] = useState(() => initialSession?.step ?? 0);
   const [score, setScore] = useState(() => initialSession?.score ?? 100);
   const [history, setHistory] = useState(() => initialSession?.history ?? []);
@@ -316,46 +320,64 @@ export default function AStarModule() {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-xl text-white shadow-lg bg-cyan-600 shadow-cyan-200">
-            <Sparkles size={24} />
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full">
+      {/* Sticky Header Bộ chọn */}
+      <div className="sticky top-[-24px] z-20 bg-slate-50/80 backdrop-blur-md pb-4 mb-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-cyan-600 text-white shadow-md shadow-cyan-200">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800 uppercase leading-none">
+                A* Search
+              </h2>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                Luyện tập theo hàm f(n)=g(n)+h(n)
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-black text-slate-800 uppercase leading-none mb-1">
-              A* Search
-            </h2>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-              Trang thực hành riêng cho thuật toán A*
-            </p>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Cấp độ:</span>
+              <select
+                value={selectedLevel}
+                onChange={(e) => handleLevelChange(Number(e.target.value))}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500"
+              >
+                {levelOptions.map((level) => (
+                  <option key={level} value={level}>
+                    {`Mức ${level}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Đề thi:</span>
+              <select
+                value={graphIdx}
+                onChange={(e) => handleGraphChange(Number(e.target.value))}
+                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-bold text-slate-700 outline-none focus:ring-2 ring-indigo-500 min-w-[200px]"
+              >
+                {visibleGraphEntries.map(({ g, idx }) => (
+                  <option key={g.id ?? idx} value={idx}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="h-8 w-[1px] bg-slate-200 mx-2 hidden md:block" />
+            
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Điểm:</span>
+              <div className="bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 font-black text-emerald-600 text-sm">
+                {score}%
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={selectedLevel}
-            onChange={(e) => handleLevelChange(Number(e.target.value))}
-            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-cyan-500"
-          >
-            {levelOptions.map((level) => (
-              <option key={level} value={level}>
-                {`Muc ${level}`}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={graphIdx}
-            onChange={(e) => handleGraphChange(Number(e.target.value))}
-            className="bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 font-bold text-slate-700 outline-none focus:ring-2 ring-cyan-500"
-          >
-            {visibleGraphEntries.map(({ g, idx }) => (
-              <option key={g.id ?? idx} value={idx}>
-                {g.name}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -388,7 +410,7 @@ export default function AStarModule() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-6 space-y-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-cyan-500" />
             <h3 className="font-bold text-slate-800 mb-4 flex justify-between items-center">
@@ -402,7 +424,7 @@ export default function AStarModule() {
             </p>
 
             <div className="bg-slate-50 rounded-2xl p-2 border border-slate-100 shadow-inner">
-              <svg viewBox="0 0 460 300" className="w-full h-auto">
+              <svg viewBox="0 0 800 700" className="w-full h-auto">
                 <defs>
                   <marker
                     id={markerId}
@@ -488,7 +510,7 @@ export default function AStarModule() {
         </div>
 
         <div
-          className={`lg:col-span-8 bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col ${showSolution ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}
+          className={`lg:col-span-6 bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col ${showSolution ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}
         >
           <div className="overflow-x-auto flex-1">
             <table className="w-full text-left">

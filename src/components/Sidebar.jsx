@@ -3,16 +3,7 @@ import { Layers, Play, Share2, Target, BrainCircuit, Zap, Sparkles, GitBranch } 
 
 const Sidebar = ({ currentTab, setTab }) => {
   return (
-    <nav className="w-full md:w-72 bg-white border-r border-slate-200 p-8 flex flex-col gap-8 shrink-0 shadow-sm">
-      <div
-        className="flex items-center gap-3 cursor-pointer"
-        onClick={() => setTab("home")}
-      >
-        <div className="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-xl">
-          <Play size={20} />
-        </div>
-        <h1 className="font-black text-2xl tracking-tighter italic">AI.LAB</h1>
-      </div>
+    <nav className="w-full md:w-52 bg-white border-r border-slate-200 p-4 flex flex-col gap-4 shrink-0 shadow-sm overflow-y-auto">
 
       <div className="space-y-1.5">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2">
