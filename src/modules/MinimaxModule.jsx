@@ -34,9 +34,10 @@ export default function MinimaxModule({
 
   // ===== STATE =====
   const initialPracticeSession = useMemo(() => loadInitialPracticeState(), []);
-  const [graphIdx, setGraphIdx] = useState(
-    () => initialPracticeSession?.graphIdx ?? initialGraphIdx,
-  );
+  const [graphIdx, setGraphIdx] = useState(() => {
+    const idx = initialPracticeSession?.graphIdx ?? initialGraphIdx;
+    return minimaxGraphsData[idx] ? idx : 0;
+  });
   const [step, setStep] = useState(() => initialPracticeSession?.step ?? 0);
   const [score, setScore] = useState(
     () => initialPracticeSession?.score ?? 100,
