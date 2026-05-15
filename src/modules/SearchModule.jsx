@@ -55,7 +55,7 @@ export default function SearchModule({
   );
   const [inputs, setInputs] = useState(
     () =>
-      initialPracticeSession?.inputs ?? { expand: "", adj: "", q: "", l: "" },
+      initialPracticeSession?.inputs ?? { expand: "", adj: "", l: "" },
   );
   const [feedback, setFeedback] = useState(null);
   const [completed, setCompleted] = useState(
@@ -225,7 +225,7 @@ export default function SearchModule({
     const tr = Array.isArray(newTrace) ? newTrace : newTrace?.trace || [];
     setStep(1);
     setHistory(tr.length > 0 ? [tr[0]] : []);
-    setInputs({ expand: "", adj: "", q: "", l: "" });
+    setInputs({ expand: "", adj: "", l: "" });
     setFeedback(null);
     setCompleted(false);
     setScore(100);
@@ -251,7 +251,7 @@ export default function SearchModule({
   const handleCheck = () => {
     const correct = trace[step];
 
-    // If adjacency expected, require the user to fill it; also require Q and L be filled
+    // If adjacency expected, require the user to fill it; also require L be filled
     const adjRequired = (correct.adj || "").trim().length > 0;
     if (adjRequired && (!inputs.adj || inputs.adj.trim() === "")) {
       setFeedback({
@@ -261,14 +261,12 @@ export default function SearchModule({
       return;
     }
     if (
-      !inputs.q ||
-      inputs.q.trim() === "" ||
       !inputs.l ||
       inputs.l.trim() === ""
     ) {
       setFeedback({
         type: "error",
-        text: "Vui lòng điền đầy đủ ô Q và L trước khi kiểm tra.",
+        text: "Vui lòng điền đầy đủ ô L trước khi kiểm tra.",
       });
       return;
     }
@@ -276,10 +274,8 @@ export default function SearchModule({
     const norm = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
 
     const normExpand = norm(inputs.expand);
-    const normQ = norm(inputs.q);
     const normL = norm(inputs.l);
     const correctExpand = norm(correct.expand);
-    const correctQ = norm(correct.q);
     const correctL = norm(correct.l);
 
     // Require adjacency input when there are neighbors; allow dash/empty when none
@@ -289,7 +285,6 @@ export default function SearchModule({
     if (
       normExpand === correctExpand &&
       (!requireAdj || isSameAdjacency(inputs.adj, correct.adj)) &&
-      normQ === correctQ &&
       normL === correctL
     ) {
       const newIndex = history.length;
@@ -304,7 +299,7 @@ export default function SearchModule({
         setFeedback({ type: "success", text: "Tuyệt vời! Bạn đã hoàn thành." });
       } else {
         setStep(step + 1);
-        setInputs({ expand: "", adj: "", q: "", l: "" });
+        setInputs({ expand: "", adj: "", l: "" });
         setFeedback({
           type: "success",
           text: "Chính xác! Chuyển sang bước tiếp theo.",
@@ -541,8 +536,8 @@ export default function SearchModule({
             </h4>
             <p className="text-sm leading-relaxed text-slate-300 italic">
               {algo === "DFS"
-                ? "Nguyên tắc Ngăn xếp (Stack): Lấy nút ở CUỐI danh sách L để mở rộng; thêm nút kề chưa có trong Q vào CUỐI L (đỉnh stack = phần tử bên phải trong chuỗi)."
-                : "Nguyên tắc Hàng đợi (Queue): Lấy nút ở ĐẦU danh sách L; thêm nút kề chưa có trong Q vào CUỐI L."}
+                ? "Nguyên tắc Ngăn xếp (Stack): Lấy nút ở CUỐI danh sách L để mở rộng; thêm nút kề vào CUỐI L (đỉnh stack = phần tử bên phải trong chuỗi)."
+                : "Nguyên tắc Hàng đợi (Queue): Lấy nút ở ĐẦU danh sách L; thêm nút kề vào CUỐI L."}
             </p>
           </div>
         </div>
@@ -560,7 +555,6 @@ export default function SearchModule({
                   <th className="p-4 border-r border-slate-100">
                     Trạng thái kề
                   </th>
-                  <th className="p-4 border-r border-slate-100">Danh sách Q</th>
                   <th className="p-4">
                     Danh sách L ({algo === "DFS" ? "Stack" : "Queue"})
                   </th>
@@ -579,9 +573,6 @@ export default function SearchModule({
                         <td className="p-4 text-slate-600 border-r border-amber-100/60 font-mono text-xs">
                           {r.isGoal ? "TTKT/DỪNG" : r.adj ? r.adj : "—"}
                         </td>
-                        <td className="p-4 text-slate-700 font-mono tracking-tighter border-r border-amber-100/60 text-xs">
-                          {r.q}
-                        </td>
                         <td
                           className={`p-4 font-mono font-black text-xs ${algo === "DFS" ? "text-indigo-700" : algo === "DLS" ? "text-purple-700" : "text-emerald-700"}`}
                         >
@@ -599,9 +590,6 @@ export default function SearchModule({
                         </td>
                         <td className="p-4 text-slate-500 border-r border-slate-50 italic">
                           {r.adj || "—"}
-                        </td>
-                        <td className="p-4 text-slate-500 font-mono tracking-tighter border-r border-slate-50">
-                          {r.q}
                         </td>
                         <td
                           className={`p-4 font-mono font-black ${algo === "DFS" ? "text-indigo-600" : "text-emerald-600"}`}
@@ -648,17 +636,6 @@ export default function SearchModule({
                       ) : (
                         <div className="text-xs italic text-slate-400">—</div>
                       )}
-                    </td>
-                    <td className="p-2 border-r border-slate-100">
-                      <input
-                        value={inputs.q}
-                        onChange={(e) =>
-                          setInputs({ ...inputs, q: e.target.value })
-                        }
-                        disabled={validationErrors.length > 0}
-                        className={`w-full p-2 border rounded-xl font-mono outline-none focus:ring-2 ring-indigo-500 shadow-sm ${validationErrors.length > 0 ? "opacity-50 cursor-not-allowed" : ""}`}
-                        placeholder="A,B..."
-                      />
                     </td>
                     <td className="p-2">
                       <input

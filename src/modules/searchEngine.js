@@ -13,22 +13,21 @@ export function getAlgorithmTrace(graph, algo) {
 
   let trace = [];
   const parent = {};
+  const MAX_STEPS = 200;
+  let steps = 0;
 
   if (isDLS) {
-    // Q and L store objects {node, d}
-    const Q = [{ node: graph.start, d: 0 }];
     let L = [{ node: graph.start, d: 0 }];
-    trace.push({ expand: "", adj: "", q: formatList(Q), l: formatList(L) });
+    trace.push({ expand: "", adj: "", l: formatList(L) });
 
     let success = false;
-    const discovered = new Set([graph.start]);
 
-    while (L.length > 0 && !success) {
+    while (L.length > 0 && !success && steps < MAX_STEPS) {
+      steps++;
       const uObj = L.pop();
       const u = uObj.node;
       const du = uObj.d;
 
-      // adjacency sorted
       const adjNames = [...(graph.edges[u] || [])].sort((a, b) =>
         a.localeCompare(b, undefined, { sensitivity: "base" }),
       );
@@ -39,22 +38,16 @@ export function getAlgorithmTrace(graph, algo) {
         const vd = du + 1;
         if (vd > depthLimit) continue;
         adjList.push({ node: v, d: vd });
-        if (!discovered.has(v)) {
-          discovered.add(v);
-          Q.push({ node: v, d: vd });
-          newNodes.push({ node: v, d: vd });
-          if (!parent[v]) parent[v] = u;
-        }
+        newNodes.push({ node: v, d: vd });
+        if (!parent[v]) parent[v] = u;
       }
 
-      // Append new nodes to L (DFS-like LIFO: push to end; since we pop from end, last added is next)
       L = [...L, ...newNodes];
 
       const isGoal = u === graph.goal;
       trace.push({
         expand: `${u}(${du})`,
         adj: adjList.map((a) => `${a.node}(${a.d})`).join(","),
-        q: formatList(Q),
         l: formatList(L),
         isGoal,
       });
@@ -77,12 +70,12 @@ export function getAlgorithmTrace(graph, algo) {
   }
 
   // Standard DFS/BFS behavior
-  const Q = [graph.start];
   let L = [graph.start];
-  trace.push({ expand: "", adj: "", q: Q.join(","), l: L.join(",") });
+  trace.push({ expand: "", adj: "", l: L.join(",") });
 
   let success = false;
-  while (L.length > 0 && !success) {
+  while (L.length > 0 && !success && steps < MAX_STEPS) {
+    steps++;
     let u = algo === "DFS" ? L.pop() : L.shift();
     let adjList = [...(graph.edges[u] || [])].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: "base" }),
@@ -90,11 +83,8 @@ export function getAlgorithmTrace(graph, algo) {
     let newNodes = [];
 
     for (let v of adjList) {
-      if (!Q.includes(v)) {
-        Q.push(v);
-        newNodes.push(v);
-        if (!parent[v]) parent[v] = u;
-      }
+      newNodes.push(v);
+      if (!parent[v]) parent[v] = u;
     }
 
     L = [...L, ...newNodes];
@@ -103,7 +93,6 @@ export function getAlgorithmTrace(graph, algo) {
     trace.push({
       expand: u,
       adj: adjList.join(","),
-      q: [...Q].join(","),
       l: [...L].join(","),
       isGoal,
     });
