@@ -21,7 +21,13 @@ const HINT_PENALTY = 10;
 
 const makeEmptyInputs = () => ({ expand: "", adj: "", l1: "", l: "" });
 
-const normalize = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+const normalize = (s) =>
+  (s || "")
+    .replace(/[^A-Z0-9]/gi, "")
+    .toUpperCase()
+    .split("")
+    .sort()
+    .join("");
 const tokenizeAdjacency = (s) =>
   ((s || "").toUpperCase().match(/[A-Z0-9]+/g) || []).filter(
     (token) => token !== "TTKT" && token !== "DUNG",

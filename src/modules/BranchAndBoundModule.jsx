@@ -26,7 +26,13 @@ const makeEmptyInputs = () => ({
   goalText: "",
 });
 
-const normalize = (s) => (s || "").replace(/[^A-Z0-9]/gi, "").toUpperCase();
+const normalize = (s) =>
+  (s || "")
+    .replace(/[^A-Z0-9]/gi, "")
+    .toUpperCase()
+    .split("")
+    .sort()
+    .join("");
 const parseRowCount = (value) => {
   const n = Number.parseInt((value || "").trim(), 10);
   if (!Number.isFinite(n) || n < 0) return 0;
